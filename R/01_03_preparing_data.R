@@ -2,16 +2,20 @@
 #####                 Functions to clean and prepare my datasets                 #####
 # ---------------------------------------------------------------------------------- #
 
-### Sourcing previous scripts ________________________________________________________
-# I first need to source (call) my previous R scripts to be able to call their functions:
-source(file = here::here("R/01_01_importing_data.R",
-                         "R/01_02_utility_functions.R"))
-
 # The functions of this R file are meant to prepare datasets: e.g. aggregate observations,
-# delete or add variables, etc. But NOT to directly explore and clean data for analyses!
+# delete or add variables, etc. But NOT to directly explore and cure data for analyses!
 
-utils::globalVariables("where") # This is necessary for now as tidyselect::where is not
-# an exported function!
+
+### Script preparations ________________________________________________________
+# I first need to source (call) my previous R scripts to be able to call their functions:
+source(file = here::here("R/01_01_importing_data.R"))
+source(file = here::here("R/01_02_utility_functions.R"))
+
+library(magrittr) # The only library that I truly need to load (in order to be able to use pipes).
+
+utils::globalVariables("where") # This is necessary for now as tidyselect::where is not an
+# exported function!
+
 
 
 ### ____________________________________________________________________
@@ -21,26 +25,25 @@ utils::globalVariables("where") # This is necessary for now as tidyselect::where
 #' The function is the \strong{first} of a series of functions meant to update and complete
 #' the tits dataset with its \emph{independent variables} (i.e. predictors and covariates).
 #' The `tdata_upD_temp` function modifies the \emph{aggregated tits dataset} in several ways:
-#' * First, it assigns to each observation (nestbox for a given year) the temperature station it is
-#' paired with (giving the new column "\emph{temp_station_id}").
+#' * First, it assigns to each observation (nestbox for a given year) the temperature station
+#' it is paired with (giving the new column "\emph{temp_station_id}").
 #' * Second, it reorganizes the date columns (deleting 2 and updating the others).
-#' * Third, it creates a new `factor` variable called "\emph{breeding window}" that indicates whether
-#' the reproduction event occurred at the beginning or at the end of the breeding season.
+#' * Third, it creates a new `factor` variable called "\emph{breeding window}" that indicates
+#' whether the reproduction event occurred at the beginning or at the end of the breeding season.
 #' * Fourth, it computes seven \strong{temperature related} variables. These variables are
-#' \emph{cumdd_30} (the cumulative day-degrees for the 30 days prior to the laying date); \emph{cumdd_60}
-#' (the cumulative day-degrees for the 60 days prior to the laying date); \emph{cumdd_between} (the
-#' cumulative day-degrees for the period between the laying and the flight dates);
-#' \emph{min_t_before} and \emph{min_t_between} (which are the minimum temperature recorded during the
-#' 30 days prior to the laying date and between the laying and the flight dates, respectively);
-#' \emph{mean_winter_t} and \emph{sd_winter_t}) (which are the mean recorded temperature during the
-#' four month of winter across 2019-2022 and its standard deviation, respectively).
+#' \emph{cumdd_30} (the cumulative day-degrees for the 30 days prior to the laying date);
+#' \emph{cumdd_60} (the cumulative day-degrees for the 60 days prior to the laying date);
+#' \emph{cumdd_between} (the cumulative day-degrees for the period between the laying and the
+#' flight dates); \emph{min_t_before} and \emph{min_t_between} (which are the minimum temperature
+#' recorded during the 30 days prior to the laying date and between the laying and the flight
+#' dates, respectively); \emph{mean_winter_t} and \emph{sd_winter_t}) (which are the mean
+#' recorded temperature during the four month of winter across 2019-2022 and its standard
+#' deviation, respectively).
 #'
 #' @param myboxtemp_data The path to the nestbox-temperature stations pairing dataset (.csv).
-#' @param mytits_data The path to the tits nestling aggregated dataset (.csv). Cf.
-#' \code{\link[ppl.tits:export_nestling_aggreg]{export_nestling_aggreg}}.
 #' @param mytemp_data The path to the temperature records dataset (.csv).
 #'
-#' @return A .csv file of the updated version of the tits dataset, and its path.
+#' @return An updated version of the tits dataset.
 #' @export
 #' @importFrom readr read_csv2
 #' @importFrom readr cols
@@ -67,9 +70,8 @@ utils::globalVariables("where") # This is necessary for now as tidyselect::where
 #' \dontrun{
 #' mydata <- tdata_upD_temp()
 #' }
-tdata_upD_temp <- function(myboxtemp_data = here::here("input_raw_data", "paired_boxtemp.csv"),
-                           mytemp_data = here::here("input_raw_data", "temp_data_20192022.csv"),
-                           mytits_data = here::here("output", "tables", "tits_nestling_data.csv")){
+tdata_upD_temp <- function(myboxtemp_data = here::here("data", "paired_boxtemp.csv"),
+                           mytemp_data = here::here("data", "temp_data_20192022.csv")){
   ##### Attribute ID to nest_years and improve formatting
   # _____________________________________________________
 
@@ -86,22 +88,7 @@ tdata_upD_temp <- function(myboxtemp_data = here::here("input_raw_data", "paired
                                                    dist_pp = readr::col_double(),
                                                    temp_id_pp = readr::col_factor(),
                                                    temp_id_final = readr::col_factor()))
-  tits <- readr::read_csv2(mytits_data, col_names = TRUE,
-                           col_types = readr::cols(id_nestbox = readr::col_factor(),
-                                                   year = readr::col_factor(),
-                                                   date = readr::col_factor(),
-                                                   laying_date = readr::col_factor(),
-                                                   incubation_date = readr::col_factor(),
-                                                   hatching_date = readr::col_factor(),
-                                                   clutch_size = readr::col_integer(),
-                                                   brood_size = readr::col_integer(),
-                                                   fledgling_nb = readr::col_integer(),
-                                                   success_manipulated = readr::col_factor(),
-                                                   father_id = readr::col_factor(),
-                                                   mother_id = readr::col_factor(),
-                                                   species = readr::col_factor())) # NOTE: I have
-  # to generate "tits" by reading the exported aggregated tits dataset in order for {targets} to be
-  # able to follow modifications. Otherwise, I could just have used ppl.tits::aggreg_by_nest().
+  tits <- aggreg_by_nest() # To load the tits data.
   tits$temp_station_id <- loco$temp_id_final
 
   tits %>%
@@ -127,7 +114,7 @@ tdata_upD_temp <- function(myboxtemp_data = here::here("input_raw_data", "paired
   # check that my code works as expected! Because of this error, I call these objects
   # (median_laydate and mrd) not in non-chronological order in the next code lines!
 
-  # Imputation of the laying_date missing values (n=9) ann correcting wrong "flight_date" for clutches
+  # Imputation of the laying_date missing values (n=9) and correcting wrong "flight_date" for clutches
   # that failed:
   tits %>% dplyr::group_by(year) %>%
     dplyr::summarise(mean_repro_duration = mean(

@@ -180,3 +180,63 @@ import_raw_tits_data <- function(mypath = here::here("data", "ppl_dijon_tits_dat
   return(xxx)
 
 }
+
+
+
+
+### __________________________________
+#' Aggregate the raw tits data by nest
+#'
+#' @description The `aggreg_by_nest()` function aggregates the raw tits data to create a table
+#' summarizing tits' breeding success for each nestbox per year where breeding occurred. As such,
+#' it only keeps information on nestlings/juveniles and disregards the lines about adult tits.
+#'
+#' @param myrawdata The object containing the raw tits data. Cf.
+#' \code{\link[ppl.tits:import_raw_tits_data]{import_raw_tits_data}}.
+#'
+#' @return The aggregated nestling tits dataset.
+#'
+#' @export
+#' @importFrom readr write_csv2
+#' @importFrom here here
+#' @importFrom dplyr filter
+#' @importFrom dplyr group_by
+#' @importFrom dplyr summarise
+#' @importFrom dplyr first
+#'
+#' @examples
+#' \dontrun{
+#' aggreg_by_nest(myrawdata = raw_tits_data)
+#' }
+
+### I need an internal object, no???
+aggreg_by_nest <- function(myrawdata){
+
+  ##### Data preparation
+  # ____________________
+  rtits <- import_raw_tits_data()
+
+  rtits %>% dplyr::filter(age == "nestling") %>%
+    dplyr::group_by(id_nestbox, year) %>% # Aggregates by nestbox and year!
+    dplyr::summarise(date = dplyr::first(date),
+                     laying_date = dplyr::first(laying_date),
+                     incubation_date = dplyr::first(incubation_date),
+                     hatching_date = dplyr::first(hatching_date),
+                     clutch_size = max(clutch_size),
+                     brood_size = max(brood_size),
+                     fledgling_nb = max(fledgling_nb),
+                     success_manipulated = dplyr::first(success_manipulated),
+                     father_id = dplyr::first(father_id),
+                     mother_id = dplyr::first(mother_id),
+                     species = dplyr::first(species),
+                     mass = mean(nestling_mass),
+                     tarsus_length = mean(nestling_tarsus_l),
+                     wing_length = mean(nestling_wing_l)) -> xxx
+
+  # # To dismiss R CMD checks warnings for unbound variables (only useful for package building):
+  # age <- id_nestbox <- year <- laying_date <- incubation_date <- hatching_date <- clutch_size <- NULL
+  # brood_size <- fledgling_nb <- success_manipulated <- father_id <- mother_id <- species <- NULL
+  # nestling_mass <- nestling_tarsus_l <- nestling_wing_l <- NULL
+
+  return(xxx)
+}
