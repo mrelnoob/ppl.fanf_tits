@@ -70,7 +70,7 @@ system("git init") # NOTE: the 'system()' function enables sending commands to t
 # in a CLI/Terminal.
 # STEP 3: Verify your configuration:
 # To verify your "user.name" and "user.email", you can use a CLI to run the following line:
-git config user.name # OR 'git config user.email' ==> If nothing appears on the prompt, then your
+# git config user.name # OR 'git config user.email' ==> If nothing appears on the prompt, then your
 # git account isn't set up and you should run:
 git config --global user.name 'yourname'
 git config --global user.email 'your_email@example.com'
@@ -116,10 +116,11 @@ usethis::use_git(message = ":tada: Initial commit") # Then restart RStudio and t
 # appear on the top-right box of RStudio.
 # STEP 6: Log in your GitHub account and create a new repository (without anything in it).
 # STEP 7: Use the following command to associate your R project with the GitHub project:
-system2("git remote add origin git@github.com:mrelnoob/jk.fanf.tarping") # Here also, personalize
-# with your own account and project names! And here again, it does not work (so --> CLI).
+git remote add origin git@github.com:mrelnoob/ppl.fanf_tits # Here also, personalize
+# with your own account and project names! It's ok if nothing happens.
 # STEP 8: Finally, you can push the changes made to your local files to GitHub:
-system2("git push -u origin master") # Same (CLI).
+git push -u origin master # There, something should appear to tell you what you've pushed to
+# your GitHub project.
 # Even using a CLI (e.g. GitBash), you may receive an error message saying that the remote
 # repository contains work that you do not have locally (...). It happens if you included files
 # in your GitHub project when you created it (e.g. a README or a LICENCE file). So theoretically,
@@ -129,3 +130,150 @@ system2("git push -u origin master") # Same (CLI).
 # IMPORTANT NOTE: because of the CLI-RStudio bugs, I can "commit" from RStudio but I cannot push,
 # so I will always be forced to do it from a CLI every time!
 
+# To ignore changes made to the Rproj file:
+usethis::use_git_ignore("jk.fanf.tarping.Rproj")
+
+
+
+##### * 1.2. Managing the project library (renv) -------------------------------
+# ---------------------------------------------------------------------------- #
+renv::init() # To initiate the project local library manager named 'renv'. Among other things, it
+# created a 'renv' folder and a 'renv.lock' file. This file is the only thing that you need to be
+# able to recreate the same R environment (correct package versions) as the one I used in this
+# project PROVIDED THAT you use the same R version as me (currently R 4.4.1).
+
+# To install a package into the 'renv' project, use:
+renv::install() # You can either specify the package name manually (e.g. "ggplot2") or you can
+# call the function as is and it will install all the packages of your DESCRIPTION file (if you
+# have one), and also screen R and Rmd files and install all packages mentioned as 'library(pkg)',
+# 'require(pkg)', and 'pkg::fun()'! Pretty cool, right?
+
+# To check the status of your 'renv' project:
+renv::status()
+
+# To update the lockfile (to add or remove packages):
+renv::snapshot() # It will compare what's inside the R project and what is listed in the lockfile
+# and ask if you want to add or remove the packages that are not yet on both projects. You can
+# also use:
+renv::clean()
+
+# To restore another 'renv' project (if you want to create the local library of another project,
+# yours or someone else's):
+renv::restore() # You may need to use 'renv::init()' first if you only have a lockfile. Remember
+# though, you need to install the same major R version as the one used to create the 'renv'
+# project!
+
+# Other functions:
+renv::deactivate()       # Deactivate local environment
+renv::activate()         # (Re)activate local environment
+renv::dependencies()     # List used packages (R and Rmd files)
+renv::history()          # Browse previous commits (with git)
+
+
+
+
+
+##### * 1.3. Project architecture ----------------------------------------------
+# ---------------------------------------------------------------------------- #
+
+# To create a folder containing my data and functions:
+dir.create("data") # In which I manually paste my raw dataset!
+dir.create("R")
+# To create other useful folders for my project:
+dir.create("output")
+dir.create("output/plots")
+dir.create("output/tables")
+dir.create("output/texts") # I could also create folders directly in my functions, which could be
+# particularly appropriate if I implement a {target} pipeline.
+
+# If I am building an R package, then these folders are not supposed to be here and should be
+# ignored (here it's not the case, so I don't run these lines):
+# usethis::use_build_ignore("output/")
+# usethis::use_build_ignore("tables/")
+# usethis::use_build_ignore("texts/")
+# usethis::use_build_ignore("plots/")
+# usethis::use_git_ignore("plots/") # To avoid saturating Git, I ignore the folders prone to
+# # contain rather heavy files such as spatial layers and plots, but not tables and texts!
+# # NOTE: the best way to build a package is not this one (see other '_devhistory' files or
+# # refer to section 0.3. of this document).
+
+
+
+
+
+##### * 1.4. Creating scripts for custom functions -----------------------------
+# ---------------------------------------------------------------------------- #
+usethis::use_pipe() # To be able to use pipes (i.e. %>%). ONLY WORKS WITH PACKAGES! If you are not
+# building a package (like me today), you'll have to explicitly call the {magrittr} package in
+# your R files.
+file.create(... = "R/01_01_data_preparation.R")
+
+
+
+
+
+##### * 1.5. Creating reports (RMarkdown) --------------------------------------
+# ---------------------------------------------------------------------------- #
+
+file.create(... = "output/texts/exploratory_data_analyses.Rmd") # Using this command,
+# a .Rmd file will be created but will lack the YAML header skeleton that should thus be manually
+# placed at the top of the document.
+
+
+
+### ** 1.5.1. To manage citations and bibliography ----
+# _____________________________________________________
+
+# To manage citations and get an automatic bibliography with RMarkdown, I have to follow these
+# steps:
+#  1) Using Zotero (or something similar), I have to 'export' the references to be cited in the
+#     report in a BibTex format (.bib) and place this text file in the same folder as my .Rmd file.
+#  2) Call this document in the `bibliography` field in the YAML metadata header (e.g.
+#     bibliography: my_example.bib).
+#  3) In text, I use arobases (@) and brackets ([], use semi-colons ";" for separation between
+#     references) to add citations (e.g. "@Martin2022 said that..." or "blabla [@Martin2022;
+#     see also @Darwin1832]").
+#  4) I can change the citation style by using the `csl` field in the YAML metadata header
+#     (e.g. csl: my_style.csl) and pasting the said style in the same folder as before.
+# Thus, I pasted my BibTex file in the same folder as my .Rdm file. But in the case where my .Rmd
+# file would be at the root of my package, I need to tell R to ignore it:
+usethis::use_build_ignore("mybiblio.bib") # Does not exist, it's just an example!
+# For practical reasons, this .bib file will certainly be updated many times during the duration
+# of the project. Also, it may be useful to manually edit the file to shorten the reference tags
+# since Zotero tends to create long tag using the name of the 1st author, the 1st work of the
+# title and the year of publication.
+
+
+
+
+
+##### * 1.6. Add a README file to the project ----------------------------------
+# ---------------------------------------------------------------------------- #
+
+usethis::use_readme_rmd() # Creates a README.Rmd and adds it automatically to .Rbuildignore (and
+# opens it). After manually editing the file, we need to compile it into a .md document
+# (otherwise, sites such as GitHub or the CRAN won't be able to display it on their pages):
+rmarkdown::render("README.Rmd")
+# As render() also produces a .html file that is not useful here, we will ignore it:
+usethis::use_build_ignore("README.html")
+usethis::use_git_ignore("README.html")
+
+
+
+
+
+########### *-----------------------------------------------------* ############
+############################ Main Git commits ##################################
+# ---------------------------------------------------------------------------- #
+usethis::use_git(message = ":boom: Exported the 1st updated results!")
+usethis::use_git(message = ":metal: Created the frame for the project!")
+usethis::use_git(message = ":zap: Ignoring something")
+usethis::use_git(message = ":pencil: Documented a function or wrote something")
+usethis::use_git(message = ":hammer: Ongoing programming!")
+usethis::use_git(message = ":white_check_mark: Proofed the 'dev_history' file")
+usethis::use_git(message = ":x: Problem detected!")
+#system("git push") # Or using a CLI!
+# Don't forget to push your commits once you're sure you made no mistakes.
+# ---------------------------------------------------------------------------- #
+# ------------------------------- THE END ------------------------------------ #
+########### *-----------------------------------------------------* ############
