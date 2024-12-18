@@ -216,6 +216,7 @@ usethis::use_pipe() # To be able to use pipes (i.e. %>%). ONLY WORKS WITH PACKAG
 # building a package (like me today), you'll have to explicitly call the {magrittr} package in
 # your R files.
 file.create(... = "R/01_01_importing_data.R")
+file.create(... = "R/01_02_utility_functions.R")
 
 
 
