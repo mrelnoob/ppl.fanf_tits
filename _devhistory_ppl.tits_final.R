@@ -20,7 +20,16 @@
 
 # Although it may seem strange, R doesn't handles NA as we could expect it. The use of "is.na()" or
 # "!is.na()" should be preferred over the use of classical equality operators "==" or "!=".
-# Cf. https://stackoverflow.com/questions/28857653/removing-na-observations-with-dplyrfilter
+# Cf. https://stackoverflow.com/questions/28857653/removing-na-observations-with-dplyrfilter:
+# "The == operator does not treat NAs as you would expect it to. Think of NA as meaning
+# "I don't know what's there". The correct answer to 3 > NA is obviously NA because we don't know
+# if the missing value is larger than 3 or not. Well, it's the same for NA == NA. They are both
+# missing values but the true values could be quite different, so the correct answer is "I don't
+# know." R doesn't know what you are doing in your analysis, so instead of potentially introducing
+# bugs that would later end up being published and embarrass you, it doesn't allow comparison
+# operators to think NA is a value".
+# CONSEQUENTLY, I should not use "blabla != 'NA'" either but instead use the is.na() function:
+# e.g. "is.na(blabla) == FALSE" or "!is.na(blabla)"!
 
 
 
@@ -206,7 +215,7 @@ dir.create("output/texts") # I could also create folders directly in my function
 usethis::use_pipe() # To be able to use pipes (i.e. %>%). ONLY WORKS WITH PACKAGES! If you are not
 # building a package (like me today), you'll have to explicitly call the {magrittr} package in
 # your R files.
-file.create(... = "R/01_01_data_preparation.R")
+file.create(... = "R/01_01_importing_data.R")
 
 
 
@@ -266,7 +275,7 @@ usethis::use_git_ignore("README.html")
 ############################ Main Git commits ##################################
 # ---------------------------------------------------------------------------- #
 usethis::use_git(message = ":boom: Exported the 1st updated results!")
-usethis::use_git(message = ":metal: Created the frame for the project!")
+usethis::use_git(message = ":metal: Created a new function")
 usethis::use_git(message = ":zap: Ignoring something")
 usethis::use_git(message = ":pencil: Documented a function or wrote something")
 usethis::use_git(message = ":hammer: Ongoing programming!")
