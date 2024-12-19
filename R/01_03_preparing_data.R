@@ -791,20 +791,20 @@ tdata_upD_final <- function(){
     mother_id = gsub(x = mother_id, pattern = "NA", replacement = NA)) %>%
     dplyr::mutate(
       father_id = as.factor(father_id),
-      mother_id = as.factor(mother_id)) -> tits # Actually, it now turns out that I don't need this
-  # code chunk as my NAs are not coded as "NA" anymore, but I keep this code chunk for posterity, in
-  # case of future need!
+      mother_id = as.factor(mother_id)) -> tits # Actually, it now turns out that I don't need
+  # this code chunk as my NAs are not coded as "NA" anymore, but I keep this code chunk for
+  # posterity, in case of future need!
 
   # Delete invalid observations:
-  tits %>% dplyr::filter((id_nestbox != "DIJ-244" | year != "2022")) %>% # Here, as my command is the
-    # inverse of a selection (it's the equivalent of using: -(my_conditions); except that 'filter'
-    # does not allow the use of "-"), I have to invert my operator as well, hence the use of "|"
-    # instead of "&". Similarly, if I wanted to do that in base R (with
-    # something like tits[cond1 == XX...], I should similarly use the function "which()" and not the
-    # minus sign alone, otherwise it will delete the first line, not the one I want to delete):
-    # e.g. tits[-which(tits$id_nestbox == "DIJ-244" & tits$year == "2022"),]. It's stupid I know, but
-    # trust me, I lost hours to understand that!
-    # For this line, the nestbox was destroyed!
+  tits %>% dplyr::filter((id_nestbox != "DIJ-244" | year != "2022")) %>% # Here, as my command
+    # is the inverse of a selection (it's the equivalent of using: -(my_conditions); except
+    # that 'filter' does not allow the use of "-"), I have to invert my operator as well,
+    # hence the use of "|" instead of "&". Similarly, if I wanted to do that in base R (with
+    # something like tits[cond1 == XX...], I should similarly use the function "which()" and
+    # not the minus sign alone, otherwise it will delete the first line, not the one I want
+    # to delete): e.g. tits[-which(tits$id_nestbox == "DIJ-244" & tits$year == "2022"),].
+    # It's stupid I know, but trust me, I lost hours to understand that!
+    # For this specific observation (above), the nestbox was destroyed!
     dplyr::filter((id_nestbox != "DIJ-023B" | year != "2022")) %>% # Brood predated.
     dplyr::filter((id_nestbox != "DIJ-073" | year != "2022")) %>% # Nestbox destroyed.
     dplyr::filter((id_nestbox != "DIJ-246" | year != "2022")) %>% # Brood predated.
@@ -850,26 +850,28 @@ tdata_upD_final <- function(){
     tits_sub %>% dplyr::filter(species == "PM") -> pm
 
     pm %>% dplyr::mutate(dplyr::across(where(assertthat::is.date), factor)) %>%
-      dplyr::select(-id_nestbox, -site, -species, -laying_date, -flight_date, -father_id, -mother_id,
-                    -mass, -tarsus_length, -wing_length) %>%
+      dplyr::select(-id_nestbox, -site, -species, -laying_date, -flight_date, -father_id,
+                    -mother_id, -mass, -tarsus_length, -wing_length) %>%
       as.data.frame() -> pm_mis # missForest only accepts data.frames or matrices (not tibbles).
     # Variables must also be only numeric or factors (no character, date, etc.)!
-    # NOTE: I also delete the morphometric variables because they are meant to be response variables
-    # (Y) but are not necessary MAR or MCAR (missing completely at random), so they should not be
-    # imputed!
+    # NOTE: I also delete the morphometric variables because they are meant to be response
+    # variables (Y) but are not necessary MAR or MCAR (missing completely at random), so they
+    # should not be imputed!
 
     # Actual data imputation using Random Forests:
     set.seed(85)
-    imput <- missForest::missForest(xmis = pm_mis, maxiter = 300, ntree = 300, variablewise = TRUE)
+    imput <- missForest::missForest(xmis = pm_mis, maxiter = 300, ntree = 300,
+                                    variablewise = TRUE)
     pm_imp <- imput$ximp
 
     # To create a summary table for the OOB errors (for each imputed variable):
     pm_imp_error <- data.frame(cbind(
-      sapply(pm_mis, function(y) sum(length(which(is.na(y))))), # Number of imputed values (i.e. NAs).
-      sqrt(imput$OOBerror)), # When 'variablewise' is set to TRUE, missForest() returns MSE (Mean
-      # Squared Error) values instead of NRMSE (Normalized Root Mean Square Error). Therefore, I use
-      # the square root of the out-of-bag (OOB) values to convert MSE into RMSE.
-      row.names = colnames(pm_mis)) # To get the name of the variables
+      sapply(pm_mis, function(y) sum(length(which(is.na(y))))), # Number of imputed values
+      # (i.e. NAs).
+      sqrt(imput$OOBerror)), # When 'variablewise' is set to TRUE, missForest() returns MSE
+      # (Mean Squared Error) values instead of NRMSE (Normalized Root Mean Square Error).
+      # Therefore, I use the square root of the out-of-bag (OOB) values to convert MSE into RMSE.
+      row.names = colnames(pm_mis)) # To get the name of the variables.
     pm_imp_error %>% dplyr::rename(Nb_imputed_values = 'X1', Oob_RMSE = 'X2') %>%
       dplyr::filter(Nb_imputed_values > 0) -> sub_errtab_pm[[i]]
 
@@ -892,13 +894,15 @@ tdata_upD_final <- function(){
     tits_sub %>% dplyr::filter(species == "CC") -> cc
 
     cc %>% dplyr::mutate(dplyr::across(where(assertthat::is.date), factor)) %>%
-      dplyr::select(-id_nestbox, -site, -species, -laying_date, -flight_date, -father_id, -father_cond,
-                    -mother_id, -mother_cond, -mass, -tarsus_length, -wing_length) %>%
+      dplyr::select(-id_nestbox, -site, -species, -laying_date, -flight_date, -father_id,
+                    -father_cond, -mother_id, -mother_cond, -mass, -tarsus_length,
+                    -wing_length) %>%
       as.data.frame() -> cc_mis
 
     # Actual data imputation using Random Forests:
     set.seed(24)
-    imput <- missForest::missForest(xmis = cc_mis, maxiter = 300, ntree = 300, variablewise = TRUE)
+    imput <- missForest::missForest(xmis = cc_mis, maxiter = 300, ntree = 300,
+                                    variablewise = TRUE)
     cc_imp <- imput$ximp
 
     # To create a summary table for the OOB errors (for each imputed variable):
@@ -962,12 +966,13 @@ tdata_upD_final <- function(){
   impute_error_cc$Oob_RMSE_200m <- impute_error_cc_200$Oob_RMSE
   impute_error_cc %>% dplyr::rename(Oob_RMSE_50m = Oob_RMSE) -> impute_error_cc
 
-  # To dismiss notes regarding "visible binding for global variables" during the CMD Check:
-  id_nestbox <- year <- Nb_imputed_values <- coord_x <- coord_y <- father_cond <- father_id <-
-    fledgling_nb <- flight_date <- laying_date <- mass <- mother_cond <- mother_id <- site <-
-    species <- success_manipulated <- tarsus_length <- wing_length <- Oob_RMSE <-
-    built_area <- open_area <- trafic <- vegetation_area <- woody_area <- dist <-
-    age_class <- herbaceous_area <- soft_manag_area <- strata_div <- woodyveg_sd <- NULL
+  # # To dismiss notes regarding "visible binding for global variables" during the CMD Check:
+  # id_nestbox <- year <- Nb_imputed_values <- coord_x <- coord_y <- father_cond <- father_id <-
+  #   fledgling_nb <- flight_date <- laying_date <- mass <- mother_cond <- mother_id <- site <-
+  #   species <- success_manipulated <- tarsus_length <- wing_length <- Oob_RMSE <-
+  #   built_area <- open_area <- trafic <- vegetation_area <- woody_area <- dist <-
+  #   age_class <- herbaceous_area <- soft_manag_area <- strata_div <- woodyveg_sd <- NULL
+  # # (Only useful for package building).
 
 
 
