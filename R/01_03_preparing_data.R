@@ -1,5 +1,5 @@
 # ---------------------------------------------------------------------------------- #
-#####                 Functions to clean and prepare my datasets                 #####
+#####         Functions to clean and prepare my datasets for analysis            #####
 # ---------------------------------------------------------------------------------- #
 
 # The functions of this R file are meant to prepare datasets: e.g. aggregate observations,
@@ -99,35 +99,41 @@ tdata_upD_temp <- function(myboxtemp_data = here::here("data", "paired_boxtemp.c
     dplyr::mutate(laying_date = as.Date(x = laying_date, optional = TRUE),
                   flight_date = as.Date(x = flight_date, optional = TRUE)) -> tits
 
-  # Correcting wrong dates (including :
-  tits[which(tits$id_nestbox == "DIJ-102" & tits$year == "2021"), "laying_date"] <- as.Date("2021-04-04")
-  tits[which(tits$id_nestbox == "DIJ-200" & tits$year == "2022"), "laying_date"] <- as.Date("2022-04-04")
+  # Correcting wrong dates:
+  tits[which(tits$id_nestbox == "DIJ-102" & tits$year == "2021"),
+       "laying_date"] <- as.Date("2021-04-04")
+  tits[which(tits$id_nestbox == "DIJ-200" & tits$year == "2022"),
+       "laying_date"] <- as.Date("2022-04-04")
 
 
 
   ### Creation of the "breeding_window" random factor___________________________#
   tits %>% dplyr::group_by(year) %>%
-    dplyr::summarise(mid_date = stats::median(laying_date, na.rm = TRUE)) -> median_laydate # NOTE:
-  # This object as well as the following (mrd) are not chronological! They're based on the order of
-  # appearance of years in "tits": so the order is (currently) 2020, 2021, 2019 and 2022. If we
-  # import data from additional years (that could change the order), I will have to carefully
-  # check that my code works as expected! Because of this error, I call these objects
-  # (median_laydate and mrd) not in non-chronological order in the next code lines!
+    dplyr::summarise(mid_date = stats::median(laying_date, na.rm = TRUE)) -> median_laydate
+  # NOTE: this object as well as the following (mrd) are not chronological! They're based on
+  # the order of appearance of years in "tits": so the order is (currently) 2020, 2021, 2019 and
+  # 2022. If we import data from additional years (that could change the order), I will have
+  # to carefully check that my code works as expected! Because of this error, I call these
+  # objects (median_laydate and mrd) in non-chronological order in the next code lines!
 
-  # Imputation of the laying_date missing values (n=9) and correcting wrong "flight_date" for clutches
-  # that failed:
+  # Imputation of the laying_date missing values (n=9) and correcting wrong "flight_date" for
+  # clutches that failed:
   tits %>% dplyr::group_by(year) %>%
     dplyr::summarise(mean_repro_duration = mean(
       flight_date, na.rm = TRUE) - mean(laying_date, na.rm = TRUE)) -> mrd
 
   tits %>% dplyr::mutate(laying_date = dplyr::case_when(
-    year == "2019" & is.na(laying_date) == TRUE ~ as.Date(flight_date - mrd$mean_repro_duration[3]),
+    year == "2019" & is.na(laying_date) == TRUE ~
+      as.Date(flight_date - mrd$mean_repro_duration[3]),
     year == "2019" & is.na(laying_date) == FALSE ~ laying_date,
-    year == "2020" & is.na(laying_date) == TRUE ~ as.Date(flight_date - mrd$mean_repro_duration[1]),
+    year == "2020" & is.na(laying_date) == TRUE ~
+      as.Date(flight_date - mrd$mean_repro_duration[1]),
     year == "2020" & is.na(laying_date) == FALSE ~ laying_date,
-    year == "2021" & is.na(laying_date) == TRUE ~ as.Date(flight_date - mrd$mean_repro_duration[2]),
+    year == "2021" & is.na(laying_date) == TRUE ~
+      as.Date(flight_date - mrd$mean_repro_duration[2]),
     year == "2021" & is.na(laying_date) == FALSE ~ laying_date,
-    year == "2022" & is.na(laying_date) == TRUE ~ as.Date(flight_date - mrd$mean_repro_duration[4]),
+    year == "2022" & is.na(laying_date) == TRUE ~
+      as.Date(flight_date - mrd$mean_repro_duration[4]),
     year == "2022" & is.na(laying_date) == FALSE ~ laying_date)) -> tits
 
   tits %>% dplyr::mutate(
@@ -187,11 +193,11 @@ tdata_upD_temp <- function(myboxtemp_data = here::here("data", "paired_boxtemp.c
   #     - I grouped the hourly temperature values (readings) for each day of the month and each
   #       month of the year (=date).
   #     - I then SUMMARISED the daily MIN and MAX temperature values ACROSS all NUMERIC columns
-  #       while assigning
-  #       suffixes to each temperature station for the MIN and MAX values, respectively (doubling
-  #       the number of columns).
+  #       while assigning suffixes to each temperature station for the MIN and MAX values,
+  #       respectively (doubling the number of columns).
   # NOTE: however, I could not figure out how to disregard missing values so there are more NAs
-  # than expected (if there was any NA hourly reading for a given day, the daily value will also be NA).
+  # than expected (if there was any NA hourly reading for a given day, the daily value will also
+  # be NA).
   temp %>% dplyr::group_by(date) %>%
     dplyr::summarise(dplyr::across(where(is.numeric), .fns =
                                      list(min_t = min))) -> daily_t_min
@@ -238,12 +244,12 @@ tdata_upD_temp <- function(myboxtemp_data = here::here("data", "paired_boxtemp.c
   mean_winter_t <- NULL
   sd_winter_t <- NULL # For simplicity, I'll reorganize them later.
 
-  # Sub-table for MEAN_WINTER_T and SD_WINTER_T (mean winter temperature across 2019-2022):
+  # Subtable for MEAN_WINTER_T and SD_WINTER_T (mean winter temperature across 2019-2022):
   daily_t_mean %>%
     tidyr::separate(date, c('year', 'month', 'day'), sep = "-") %>%
     dplyr::filter(month == "01" | month == "02" | month == "03" |
                     month == "12") -> mean_t_winter
-  # Note: I place this here because, contrarily to the other sub-tables, this one does
+  # Note: I place this here because, contrarily to the other subtables, this one does
   # not require a "i" (it doesn't depend on a specific date) so it can be computed just once!
 
 
@@ -395,18 +401,158 @@ tdata_upD_temp <- function(myboxtemp_data = here::here("data", "paired_boxtemp.c
   tits$sd_winter_t <- as.numeric(sd_winter_t)
 
 
-  # To dismiss notes regarding "visible binding for global variables" during the CMD Check:
-  laying_date <- year2 <- month2 <- day2 <- flight_date <- year3 <- month3 <- day3 <-
-    year <- breeding_window <- hatching_date <- incubation_date <- time <- s69 <- month <-
-    day <- min_t <- max_t <- NULL
+  # # To dismiss notes regarding "visible binding for global variables" during the CMD Check
+  # # (only useful for package building):
+  # laying_date <- year2 <- month2 <- day2 <- flight_date <- year3 <- month3 <- day3 <-
+  #   year <- breeding_window <- hatching_date <- incubation_date <- time <- s69 <- month <-
+  #   day <- min_t <- max_t <- NULL
 
 
   ##### To export the updated table
   # _______________________________
   readr::write_csv2(x = tits, file = here::here("output", "tables", "ndata_temp.csv"))
-  return(here::here("output", "tables", "ndata_temp.csv"))
+  # return(here::here("output", "tables", "ndata_temp.csv"))
+  # As this function is pretty long to run (because of the heavy for-loop), I do not make it
+  # return the resulting data in a tibble/dataframe, but as a CSV table that could thus be
+  # loaded without actually calling the function.
   # _______________________________
 
+}
+
+
+
+
+
+### ________________________________________________________________________________
+#' Update and export the tits dataset with all its "raw" independent variables (IVs)
+#'
+#' @description (THEORETICALLY MEANT FOR INTERNAL USE ONLY, use with caution!) \cr
+#' The function is the \strong{second} of a series of functions meant to update and
+#' complete the tits dataset with its independent variables (i.e. predictors and covariates).
+#' The `tdata_upD_rawiv` function loads and modifies the dataset generated by the previous
+#' update function (\code{\link[ppl.tits:tdata_upD_temp]{tdata_upD_temp}}) in several ways:
+#' * First, it performs a left join between both input datasets (i.e. `my_tdata` and
+#' `my_iv_data` - see below).
+#' * Second, it computes two new variables: namely \emph{woody_area} and \emph{open_area} from
+#' already existing columns.
+#' * Third, it reorganises the dataset for improved clarity.
+#' When it's done processing, the function exports the updated dataset.
+#'
+#' @param my_tdata The path to the dataset generated by
+#' \code{\link[ppl.tits:tdata_upD_temp]{tdata_upD_temp}}. Note that this argument is not
+#' necessarily required but is strongly advised.
+#' @param my_iv_data The path to the dataset (.csv) generated by PostGIS (cf. ppl_log.docx***) and
+#' containing the "raw" independent variables (IV = predictors and covariates) meant to describe the local
+#' environment around each nestbox (= zonal statistics). It is called "raw" as opposed to the
+#' more "advanced" IV that will be computed by the next functions to generate the "clean" and "complete"
+#' tits dataset (`ntits_clean` and `ntits_complete`, respectively).
+#'
+#' @return A list containing 1) the updated dataset (a tibble accessible with
+#' `tdata_upD_rawiv()$dataset`), and 2) the path to the exported .csv file of the updated
+#' dataset (accessible with `tdata_upD_rawiv()$path`).
+#' @export
+#' @importFrom readr read_csv2
+#' @importFrom readr cols
+#' @importFrom readr col_factor
+#' @importFrom readr col_integer
+#' @importFrom readr write_csv2
+#' @importFrom here here
+#' @importFrom dplyr mutate
+#' @importFrom dplyr case_when
+#' @importFrom dplyr left_join
+#' @importFrom dplyr relocate
+#' @importFrom dplyr select
+#'
+#' @examples
+#' \dontrun{
+#' mydata <- tdata_upD_rawiv()$dataset
+#' path_to_csv <- tdata_upD_rawiv()$path
+#' }
+tdata_upD_rawiv <- function(my_tdata = here::here("output", "tables", "ndata_temp.csv"),
+                            my_iv_data = here::here("input_raw_data", "tits_predictors.csv")){
+
+  ##### Import data files
+  # _____________________
+  tits <- readr::read_csv2(my_tdata, col_names = TRUE,
+                           col_types = readr::cols(id_nestbox = readr::col_factor(),
+                                                   year = readr::col_factor(),
+                                                   breeding_window = readr::col_factor(),
+                                                   laying_date = readr::col_date(),
+                                                   flight_date = readr::col_date(),
+                                                   clutch_size = readr::col_integer(),
+                                                   brood_size = readr::col_integer(),
+                                                   fledgling_nb = readr::col_integer(),
+                                                   success_manipulated = readr::col_factor(),
+                                                   father_id = readr::col_factor(),
+                                                   mother_id = readr::col_factor(),
+                                                   species = readr::col_factor())) # NOTE: I have
+  # to generate "tits" by reading the exported "ndata_temp" dataset in order for {targets} to be
+  # able to follow modifications. Otherwise, I could just have used ppl.tits::tdata_upD_temp().
+
+
+  tpred <- readr::read_csv2(my_iv_data, col_names = TRUE, na = "NA",
+                            col_types = readr::cols(id_nestbox = readr::col_factor(),
+                                                    lsource_vs150_m = readr::col_integer(),
+                                                    age_class = readr::col_factor(
+                                                      ordered = TRUE,
+                                                      levels = c("0", "1", "2"),
+                                                      include_na = TRUE),
+                                                    site = readr::col_factor(),
+                                                    strata_div = readr::col_factor(
+                                                      ordered = TRUE,
+                                                      levels = c("0", "1", "2", "3", "4"),
+                                                      include_na = TRUE)))
+
+
+
+
+
+  ##### Actual data join, new predictors computation and data reorganisation
+  # ________________________________________________________________________
+  ntits <- dplyr::left_join(tits, tpred, by = "id_nestbox")
+  ntits %>% dplyr::mutate(woody_area = vegetation_area - herbaceous_area,
+                          open_area = dplyr::case_when(
+                            dist == 50 ~ 7850 - c(vegetation_area + built_area + water_area),
+                            dist == 100 ~ 31400 - c(vegetation_area + built_area + water_area),
+                            dist == 150 ~ 70650 - c(vegetation_area + built_area + water_area),
+                            dist == 200 ~ 125600 - c(vegetation_area + built_area + water_area))) %>% # The
+    # values are the total surface area of the buffers computed by PostGIS as a
+    # function of their radius!
+    dplyr::select(-temp_station_id) %>%
+    dplyr::relocate(site, .after = id_nestbox) %>%
+    dplyr::relocate(dist, .after = year) %>%
+    dplyr::relocate(lsource_vs150_m, .after = lflux_10_iq) %>%
+    dplyr::relocate(lsource_vs150_iq, .after = lsource_vs150_m) %>%
+    dplyr::relocate(soft_manag_area, .after = herbaceous_area) %>%
+    dplyr::relocate(built_area, .after = soft_manag_area) %>%
+    dplyr::relocate(build_volume, .after = built_area) %>%
+    dplyr::relocate(build_sd, .after = build_volume) %>%
+    dplyr::relocate(woody_area, .before = vegetation_area) %>%
+    dplyr::relocate(open_area, .after = build_sd) %>%
+    dplyr::relocate(water_area, .after = open_area) %>%
+    dplyr::relocate(age_class, .after = trafic) %>%
+    dplyr::relocate(strata_div, .after = age_class) -> ntits
+  ntits[which(ntits$id_nestbox == "DIJ-188B" & ntits$year == "2022"), "strata_div"] <- "4" # I obviously forgot
+  # to assign a strata_div value for this nestbox, so here it is (NOTE: as I assign it here, it
+  # means I did not update it in the GIS layers nor in the database)!
+
+  # To dismiss notes regarding "visible binding for global variables" during the CMD Check:
+  id_nestbox <- year <- breeding_window <- laying_date <- flight_date <- clutch_size <- brood_size <-
+    fledgling_nb <- success_manipulated <- father_id <- mother_id <- species <-
+    vegetation_area <- herbaceous_area <- built_area <- temp_station_id <- site <-
+    lsource_vs150_m <- lflux_10_iq <- lsource_vs150_iq <- soft_manag_area <- woody_area <-
+    open_area <- age_class <- trafic <- strata_div <- water_area <- dist <- build_volume <- build_sd <- NULL
+
+
+
+  ##### To export the updated table
+  # _______________________________
+  readr::write_csv2(x = ntits, file = here::here("output", "tables", "ndata_rawiv.csv"))
+
+  output <- list(dataset = ntits,
+                 path = here::here("output", "tables", "ndata_rawiv.csv"))
+  return(output)
+  # _______________________________
 }
 
 
