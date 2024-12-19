@@ -278,9 +278,9 @@ usethis::use_git_ignore("README.html")
 # ---------------------------------------------------------------------------- #
 # *** Produire un fichier de metadata (qui explique notamment comment ont été
 #     calculé chaque données).
-# *** Renvoyer vers le metadata dans les aides des fonctions qui en parlent.
+# *** Renvoyer vers le metadata partout où j'en parle (e.g. fonctions, etc.) ==> il
+#     faut que je fasse une recherche "***".
 # ---------------------------------------------------------------------------- #
-
 
 
 ########### *-----------------------------------------------------* ############
