@@ -288,7 +288,7 @@ usethis::use_git_ignore("README.html")
 ########### *-----------------------------------------------------* ############
 ############################ Main Git commits ##################################
 # ---------------------------------------------------------------------------- #
-usethis::use_git(message = ":boom: Exported the 1st updated results!")
+usethis::use_git(message = ":boom: Exported the final dataset!")
 usethis::use_git(message = ":metal: Created a new function")
 usethis::use_git(message = ":zap: Ignoring something")
 usethis::use_git(message = ":pencil: Documented a function or wrote something")

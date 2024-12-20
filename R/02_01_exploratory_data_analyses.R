@@ -26,44 +26,68 @@ utils::globalVariables("where") # This is necessary for now as tidyselect::where
 #' statistical properties.
 #' Finally, the function exports the updated dataset as a tibble or as a new .csv file.
 #'
-#' @return A list containing five elements: 1) the updated "clean" dataset (a tibble
-#' accessible with `tdata_upD_final()$clean_dataset`); 2) the dataset before imputations but
-#' containing all data corrections applied by the function (a tibble accessible with
-#' `tdata_upD_final()$priorimp_dataset`); 3 and 4) tables showing the out-of-bag imputation
-#' error for both species and for each of the four "buffer radius" (accessible with
-#' `tdata_upD_final()$impute_error` followed by the desired species code (e.g. "_pm";
-#' cf. examples)); and 5) the path to the exported .csv file of the updated "clean" dataset
-#' (`ndata_clean.csv`; accessible with `tdata_upD_final()$path`).
+#' @return A list containing nine elements:
+#' 1) the updated "final" dataset (a tibble accessible with `tfinal_EDAta()$final_dataset`);
+#' 2) the correlation circle from the normed-PCA used to create the "urban intensity" proxy
+#' variable (a plot accessible with `tfinal_EDAta()$urban_corplot`);
+#' 3) the correlation circle from the normed-PCA used to create the "light pollution" proxy
+#' variable (a plot accessible with `tfinal_EDAta()$lightpol_corplot`);
+#' 4) the correlation matrix for all the potential predictors (a plot accessible with
+#' `tfinal_EDAta()$x_cormat`);
+#' 5) the correlation matrix for all the potential response variables (a plot accessible with
+#' `tfinal_EDAta()$y_cormat`);
+#' 6) the pairplot for all the potential predictors (a plot accessible with
+#' `tfinal_EDAta()$x_pairplot`);
+#' 7) the pairplot for all the potential response variables (a plot accessible with
+#' `tfinal_EDAta()$y_pairplot`);
+#' 8) the table showing the skewness and kurtosis for all the potential predictors (accessible
+#' with `tfinal_EDAta()$x_skewtable`);
+#' 9) the table showing the skewness and kurtosis for all the potential response variables
+#' (accessible with `tfinal_EDAta()$y_skewtable`);
+#' 10) the path to the exported .csv file of the updated "final" dataset
+#' (`ndata_final.csv`; accessible with `tdata_upD_final()$path`).
 #'
 #' @export
 #' @importFrom here here
 #' @importFrom readr read_csv2
 #' @importFrom readr cols
 #' @importFrom readr col_factor
-#' @importFrom readr col_integer
-#' @importFrom readr col_date
 #' @importFrom readr write_csv2
+#' @importFrom FactoMineR PCA
+#' @importFrom factoextra fviz_pca_var
+#' @importFrom gridExtra grid.arrange
+#' @importFrom moments skewness
+#' @importFrom knitr kable
+#' @importFrom stats cor
+#' @importFrom stats na.omit
+#' @importFrom stats relevel
+#' @importFrom stats median
+#' @importFrom ggcorrplot cor_pmat
+#' @importFrom ggcorrplot ggcorrplot
+#' @importFrom ggplot2 theme_gray
+#' @importFrom GGally ggpairs
+#' @importFrom moments skewness
+#' @importFrom moments kurtosis
+#' @importFrom lubridate yday
 #' @importFrom dplyr mutate
 #' @importFrom dplyr filter
 #' @importFrom dplyr select
+#' @importFrom dplyr inner_join
+#' @importFrom dplyr case_when
 #' @importFrom dplyr relocate
 #' @importFrom dplyr rename
 #' @importFrom dplyr across
-#' @importFrom assertthat is.date
-#' @importFrom missForest missForest
+#' @importFrom tibble as_tibble
 #'
 #' @examples
 #' \dontrun{
-#' # To obtain the data and imputation error regarding the 50m buffer data:
-#' mydata <- tdata_upD_final()$clean_dataset
-#' mydata %>% dplyr::filter(dist == 50) -> mydata_50
-#' mydata <- tdata_upD_final()$priorimp_dataset # May be useful to compare the results of
-#' # missing data imputations.
-#' myerror_pm <- tdata_upD_final()$impute_error_pm
-#' myerror_cc <- tdata_upD_final()$impute_error_cc
-#' path_to_csv <- tdata_upD_final()$path
+#' # To obtain the final dataset and one of the skewness/kurtosis table (the principle is the
+#' # same for every other outputs):
+#' final_titdata <- tfinal_EDAta()$final_dataset
+#' pred_sk.table <- tfinal_EDAta()$x_skewtable
 #' }
 tfinal_EDAta <- function(){
+
   ###################### ********************************************* ###########################
   # -------------------------------------- #
   ##### 1. Data import and preparation #####
@@ -467,10 +491,24 @@ tfinal_EDAta <- function(){
   ntits2[ntits2$id_nestbox == "DIJ-205" & ntits2$year == "2019", "species"] <- "PM" # Misidentified
   # observation.
 
-  # summary(ntits2[,35:ncol(ntits2)])
-  # uni.dotplots(ntits2[,45:ncol(ntits2)]) # If needed.
-  colnames(ntits2)
 
-  # return(ntits2) OR LIST?????????????????????????
+
+
+  ##### To export the results
+  # _________________________
+
+  readr::write_csv2(x = ntits2, file = here::here("output", "tables", "ndata_final.csv"))
+
+  output <- list(final_dataset = ntits2,
+                 urban_corplot = landscape.varplot,
+                 lightpol_corplot = lightpol.varplot,
+                 x_cormat = ntitsx.corplot,
+                 y_cormat = ntitsy.corplot,
+                 x_pairplot = ntitsx.pairplot,
+                 y_pairplot = ntitsy.pairplot,
+                 x_skewtable = ntitsx_skewkurtable,
+                 y_skewtable = ntitsy_skewkurtable,
+                 path = here::here("output", "tables", "ndata_final.csv"))
+  return(output)
 }
 
