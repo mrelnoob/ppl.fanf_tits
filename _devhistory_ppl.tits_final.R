@@ -218,7 +218,8 @@ usethis::use_pipe() # To be able to use pipes (i.e. %>%). ONLY WORKS WITH PACKAG
 file.create(... = "R/01_01_importing_data.R")
 file.create(... = "R/01_02_utility_functions.R")
 file.create(... = "R/01_03_preparing_data.R")
-file.create(... = "R/02_00_graphab_analyses.txt")
+file.create(... = "R/02_00_graphab_analyses.R")
+file.create(... = "R/02_01_exploratory_data_analyses.R")
 
 
 
