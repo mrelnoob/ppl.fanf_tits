@@ -145,8 +145,9 @@ plot(x = ntits3$year, y = resid) # Seems rather ok.
 
 ## Simulation-based scaled residuals computation ({DHARMa} method):
 simu.resid <- DHARMa::simulateResiduals(fittedModel = ttCy_comglmm1, n = 1000, re.form = NULL) # The
-# 're.form' argument is to base simulations on the model unconditional of the random effects (and only works
-# for {lme4} formulations). It is useful for testing dispersion (see below) but can be omitted eventually.
+# 're.form' argument is to base simulations on the model unconditional of the random effects (and
+# only works for {lme4} formulations). It is useful for testing dispersion (see below) but can be
+# omitted eventually.
 plot(simu.resid) # Ok-ish but some slight deviations exist.
 DHARMa::outliers(simu.resid) # No potential outliers.
 # ntits2[c(156,170,181,210,227,314,362,367),] # [Note made previously to outliers removal] They have
