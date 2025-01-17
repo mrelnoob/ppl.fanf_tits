@@ -493,6 +493,18 @@
       ],
       "Hash": "ac6cdb8552c61bd36b0e54d07cf2aab7"
     },
+    "checkmate": {
+      "Package": "checkmate",
+      "Version": "2.3.2",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "backports",
+        "utils"
+      ],
+      "Hash": "0e14e01ce07e7c88fd25de6d4260d26b"
+    },
     "cli": {
       "Package": "cli",
       "Version": "3.6.3",
@@ -641,7 +653,7 @@
     },
     "datawizard": {
       "Package": "datawizard",
-      "Version": "0.13.0",
+      "Version": "1.0.0",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
@@ -650,7 +662,7 @@
         "stats",
         "utils"
       ],
-      "Hash": "303aeace6f3554ce2d62e5d1df6fcd6e"
+      "Hash": "8a37ad13b9b0db70bf32d6eb2fc0a2aa"
     },
     "degday": {
       "Package": "degday",
@@ -768,6 +780,23 @@
         "vctrs"
       ],
       "Hash": "fedd9d00c2944ff00a0e2696ccf048ec"
+    },
+    "effectsize": {
+      "Package": "effectsize",
+      "Version": "1.0.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "bayestestR",
+        "datawizard",
+        "insight",
+        "parameters",
+        "performance",
+        "stats",
+        "utils"
+      ],
+      "Hash": "b289af101f62cb7b46c53d1a45ed5198"
     },
     "ellipse": {
       "Package": "ellipse",
@@ -917,6 +946,19 @@
       ],
       "Hash": "618609b42c9406731ead03adf5379850"
     },
+    "forestplot": {
+      "Package": "forestplot",
+      "Version": "3.1.6",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "abind",
+        "checkmate",
+        "grid"
+      ],
+      "Hash": "848afc7e222f2eee8267711bf142913e"
+    },
     "fs": {
       "Package": "fs",
       "Version": "1.6.5",
@@ -976,6 +1018,21 @@
         "stats"
       ],
       "Hash": "aad38d027d0dd18621e213919c20a65f"
+    },
+    "ggeffects": {
+      "Package": "ggeffects",
+      "Version": "2.0.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "datawizard",
+        "graphics",
+        "insight",
+        "stats",
+        "utils"
+      ],
+      "Hash": "096a8e69434c375473ac3ab0751a57bb"
     },
     "ggplot2": {
       "Package": "ggplot2",
@@ -1787,6 +1844,23 @@
       ],
       "Hash": "aefe2753a8e7277e0fdd6d1d08d1692e"
     },
+    "parameters": {
+      "Package": "parameters",
+      "Version": "0.24.1",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "bayestestR",
+        "datawizard",
+        "graphics",
+        "insight",
+        "methods",
+        "stats",
+        "utils"
+      ],
+      "Hash": "1cff6878a759914640ff9ed51dd745a2"
+    },
     "patchwork": {
       "Package": "patchwork",
       "Version": "1.3.0",
@@ -2300,6 +2374,90 @@
         "xtable"
       ],
       "Hash": "4b4477baa9a939c5577e5ddb4bf01f28"
+    },
+    "sjPlot": {
+      "Package": "sjPlot",
+      "Version": "2.8.17",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "MASS",
+        "R",
+        "bayestestR",
+        "datawizard",
+        "dplyr",
+        "ggeffects",
+        "ggplot2",
+        "grDevices",
+        "graphics",
+        "insight",
+        "knitr",
+        "parameters",
+        "performance",
+        "purrr",
+        "rlang",
+        "scales",
+        "sjlabelled",
+        "sjmisc",
+        "sjstats",
+        "stats",
+        "tidyr",
+        "utils"
+      ],
+      "Hash": "63a068f0af77c28e4107a424c38bc4d4"
+    },
+    "sjlabelled": {
+      "Package": "sjlabelled",
+      "Version": "1.2.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "datawizard",
+        "insight",
+        "stats",
+        "tools",
+        "utils"
+      ],
+      "Hash": "4bd18166ef8ca74aeec74ad295dfe77f"
+    },
+    "sjmisc": {
+      "Package": "sjmisc",
+      "Version": "2.8.10",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "datawizard",
+        "dplyr",
+        "insight",
+        "magrittr",
+        "methods",
+        "purrr",
+        "rlang",
+        "sjlabelled",
+        "stats",
+        "tidyselect",
+        "utils"
+      ],
+      "Hash": "a8f86596ca0fa8de37f7ef1774d89158"
+    },
+    "sjstats": {
+      "Package": "sjstats",
+      "Version": "0.19.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "datawizard",
+        "effectsize",
+        "insight",
+        "parameters",
+        "performance",
+        "stats",
+        "utils"
+      ],
+      "Hash": "b3fbc97de6990bdb3004c7baaa6b2cc0"
     },
     "sourcetools": {
       "Package": "sourcetools",
