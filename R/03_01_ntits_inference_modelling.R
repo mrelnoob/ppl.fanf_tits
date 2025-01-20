@@ -11,9 +11,17 @@
 # to additional questions and perspectives that have, by nature, far less support as the data have
 # already been used for formal testing (so type-I error rates aren't properly controlled for anymore)!
 
+
+
+
+
+########################## *****************************************###############################
+# ----------------------- #
+##### 0. Preparation  #####
+# ----------------------- #
+
 library(magrittr) # The only library that I truly need to load (in order to be able to use pipes).
 .pardefault <- par()
-
 
 
 ### Loading the data ___________________________________________________________
@@ -40,14 +48,14 @@ ntits <- readr::read_csv2(here::here("output", "tables", "ndata_final.csv"), col
   dplyr::mutate(manag_low = ifelse(manag_intensity == "0", "1", "0"),
                 manag_mid = ifelse(manag_intensity == "1", "1", "0"),
                 manag_high = ifelse(manag_intensity == "2", "1", "0"))
-# NOTE: I
-# have to load the "tits" final dataset exported by 'tfinal_EDAta()' in order to avoid running
-# the former function that is a bit long to run (but you can if you want).
+# NOTE: I have to load the "tits" final dataset exported by 'tfinal_EDAta()' in order to avoid
+# running the former function that is a bit long to run (but you can if you want).
 
 
 
 
 
+########################## *****************************************###############################
 # -------------------------------- #
 ##### 1. Modelling clutch size #####
 # -------------------------------- #
@@ -420,7 +428,7 @@ summary(ttCy_comglmm1) # AIC = 1384 and Marg_R2_glmm = 0.105; Cond_R2_glmm = 0.1
 
 
 
-########################## ************************************************* ###############################
+########################## *****************************************###############################
 # -------------------------------------- #
 ##### 2. Modelling fledging survival #####
 # -------------------------------------- #
@@ -430,8 +438,9 @@ summary(ttCy_comglmm1) # AIC = 1384 and Marg_R2_glmm = 0.105; Cond_R2_glmm = 0.1
 ### ** 2.1.1. Initial model fit ----
 # __________________________________
 
-# In accordance with previous diagnostics, I remove observations with brood_size = 0 since they
-# likely are true outliers (see comments in the previous sections):
+# In accordance with preliminary diagnostics, I remove observations with 'brood_size = 0' since
+# they likely are true outliers (possibly linked to parental desertion, nest depredation, or other
+# stochastic events that cannot be accounted for by our data):
 ntits3 <- ntits[-c(which(ntits$brood_size == 0)),]
 # Preliminary diagnostics for the initial models (not shown here but easily reproducible) also
 # identified significant overdispersion for fledging survival. To account for that, Harrison (2014 -
@@ -453,10 +462,16 @@ ntits3$id_obs <- as.factor(1:nrow(ntits3)) # To create an observation-level RE (
 # while retaining part of the desired information.
 
 # Finally, note also that I left much of the code of the section below in "comments" to avoid
-# overloading the script, but you can perfectly run it if you want. I thus only leave the code for
-# the retained models.
+# overloading the script (it's easier/cleaner that way to run the whole script). Therefore, I only
+# leave the code for the retained models, i.e. zero-inflated beta-binomial GLMMs (ZIBBIN models).
+# But feel free to run the whole code if you like, you'll see that models in the comments (e.g.
+# regular binomial GLMs or GLMMs, models without zero-inflation) perform more poorly than the
+# retained models (i.e. ZIBBIN GLMMs).
 
-# ## Fitting a regular binomial GLM:
+
+
+# ### Fitting models without zero-inflation components:
+# ## Fitting a regular binomial (BIN) GLM:
 # ttFS_bin_glm1 <- stats::glm(fledgling_nb/brood_size ~ log_patch_area + log_F_metric_d2b1 +
 #                            clutch_size +
 #                            urban_intensity + manag_intensity +
@@ -466,8 +481,8 @@ ntits3$id_obs <- as.factor(1:nrow(ntits3)) # To create an observation-level RE (
 #                          data = ntits3, family = "binomial") # Weights should not be forgotten.
 # # Otherwise, the formulation should be: Y = cbind(fledgling_nb, brood_size-fledgling_nb)!
 #
-# ## Fitting a beta-binomial GLM:
-# ttFS_bbin_glm1 <- stats::glm(fledgling_nb/brood_size ~ log_patch_area + log_F_metric_d2b1 +
+# ## Fitting a beta-binomial (BBIN) GLM:
+# ttFS_bbin_glm1 <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_patch_area + log_F_metric_d2b1 +
 #                                clutch_size +
 #                                urban_intensity + manag_intensity +
 #                                light_pollution + noise_m + traffic +
@@ -477,7 +492,7 @@ ntits3$id_obs <- as.factor(1:nrow(ntits3)) # To create an observation-level RE (
 #                              family = glmmTMB::betabinomial(link = "logit"))
 #
 #
-# ## Fitting a binomial GLMM:
+# ## Fitting a binomial (BIN) GLMM:
 # ttFS_bin_glmm1 <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_patch_area + log_F_metric_d2b1 +
 #                                   clutch_size +
 #                                   urban_intensity + manag_intensity +
@@ -486,7 +501,17 @@ ntits3$id_obs <- as.factor(1:nrow(ntits3)) # To create an observation-level RE (
 #                                 weights = brood_size, data = ntits3,
 #                                 family = "binomial")
 #
-# ## Fitting a binomial GLMM with an OLRE:
+# ## Fitting a beta-binomial (BBIN) GLMM:
+# ttFS_bbin_glmm1 <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_patch_area + log_F_metric_d2b1 +
+#                                clutch_size +
+#                                urban_intensity + manag_intensity +
+#                                light_pollution + noise_m + traffic +
+#                                min_t_between + laying_day + year + (1|id_nestbox),
+#                              weights = brood_size, # Prior weights!
+#                              data = ntits3,
+#                              family = glmmTMB::betabinomial(link = "logit"))
+#
+# ## Fitting a binomial (BIN) GLMM with an OLRE:
 # ttFS_bin_glmm1_olre <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_patch_area +
 #                                           log_F_metric_d2b1 + clutch_size +
 #                                   urban_intensity + manag_intensity +
@@ -494,20 +519,20 @@ ntits3$id_obs <- as.factor(1:nrow(ntits3)) # To create an observation-level RE (
 #                                   min_t_between + laying_day + year + (1|id_obs) + (1|id_nestbox),
 #                                 weights = brood_size, data = ntits3,
 #                                 family = "binomial")
+# summary(ttFS_bin_glm1) # AIC = 2105.8.
+# summary(ttFS_bbin_glm1) # AIC = 1475.5, so the beta-binomial GLM >> binomial GLM.
+# summary(ttFS_bin_glmm1) # AIC = 1674.9, so the binomial GLMM >> binomial GLM.
+# summary(ttFS_bbin_glmm1) # AIC = 1476.3, so the beta-binomial GLMM >> binomial GLM or GLMM, but it
+# # doesn't change much compared to the beta-binomial GLM (useless RE?).
+# summary(ttFS_bin_glmm1_olre) # AIC = 1476, so the OLRE binomial GLMM is worth the beta-binomial
+# # models.
+# ## So BBIN GLM(M) or BIN GLMM with OLRE seem better.
 #
-# ## Fitting a beta-binomial GLMM:
-# ttFS_bbin_glmm1 <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_patch_area + log_F_metric_d2b1 +
-#                                   clutch_size +
-#                                   urban_intensity + manag_intensity +
-#                                   light_pollution + noise_m + traffic +
-#                                   min_t_between + laying_day + year + (1|id_nestbox),
-#                                 weights = brood_size, data = ntits3,
-#                                 family = glmmTMB::betabinomial(link = "logit"))
 #
-#
-# ## Fitting a zero-inflated (ZI) binomial GLMM:
-# ttFS_zibin_glmm1 <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_patch_area + log_F_metric_d2b1 +
-#                                     clutch_size +
+# ### Including a zero-inflation component to the models:
+# ## Fitting a zero-inflated binomial (ZIBIN) GLMM:
+# ttFS_zibin_glmm1 <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_patch_area+
+#                                        log_F_metric_d2b1 + clutch_size +
 #                                     urban_intensity + manag_intensity +
 #                                     light_pollution + noise_m + traffic +
 #                                     min_t_between + laying_day + year + (1|id_nestbox),
@@ -515,17 +540,27 @@ ntits3$id_obs <- as.factor(1:nrow(ntits3)) # To create an observation-level RE (
 #                                   family = "binomial",
 #                                   ziformula = ~1) # Intercept only.
 #
-## Fitting a zero-inflated (ZI) binomial GLMM with OLRE:
+# # Fitting a ZIBIN GLMM with OLRE:
 # ttFS_zibin_glmm1_olre <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_patch_area +
 #                                             log_F_metric_d2b1 + clutch_size +
 #                                     urban_intensity + manag_intensity +
 #                                     light_pollution + noise_m + traffic +
-#                                     min_t_between + laying_day + year + (1|id_obs) + (1|id_nestbox),
+#                                     min_t_between + laying_day + year + (1|id_obs)+(1|id_nestbox),
 #                                   weights = brood_size, data = ntits3,
 #                                   family = "binomial",
 #                                   ziformula = ~1) # Intercept only.
 
-## Fitting a zero-inflated (ZI) beta-binomial GLMM:
+## Fitting a zero-inflated beta-binomial (ZIBBIN) GLM:
+ttFS_zibbin_glm1 <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_patch_area +
+                                       log_F_metric_d2b1 + clutch_size +
+                                    urban_intensity + manag_intensity +
+                                    light_pollution + noise_m + traffic +
+                                    min_t_between + laying_day + year,
+                                  weights = brood_size, data = ntits3,
+                                  family = glmmTMB::betabinomial(link = "logit"),
+                                  ziformula = ~1) # Intercept only.
+
+## Fitting a ZIBBIN GLMM:
 ttFS_zibbin_glmm1 <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_patch_area + log_F_metric_d2b1 +
                                         clutch_size +
                                         urban_intensity + manag_intensity +
@@ -534,29 +569,18 @@ ttFS_zibbin_glmm1 <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_patch_area +
                                       weights = brood_size, data = ntits3,
                                       family = glmmTMB::betabinomial(link = "logit"),
                                       ziformula = ~1) # Intercept only.
-# ntits3 %>% dplyr::mutate(c.clutch_size = clutch_size-stats::median(clutch_size)) -> ntits3
-# ttFS_zibbin_glmm1_cent <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ c.log_patch_area +
-#                                              c.log_F_metric_d2b1 +
-#                                              c.clutch_size +
-#                                              urban_intensity + manag_low + manag_high +
-#                                              light_pollution + c.noise_m + c.traffic +
-#                                              c.min_t_between + year + (1|id_nestbox),
-#                                   weights = brood_size, data = ntits3,
-#                                   family = glmmTMB::betabinomial(link = "logit"),
-#                                   ziformula = ~1) # Intercept only.
-#
-# ## Fitting a zero-inflated (ZI) beta-binomial GLM:
-# ttFS_zibbin_glm1 <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_patch_area +
-#                                        log_F_metric_d2b1 + clutch_size +
-#                                     urban_intensity + manag_intensity +
-#                                     light_pollution + noise_m + traffic +
-#                                     min_t_between + laying_day + year,
-#                                   weights = brood_size, data = ntits3,
-#                                   family = glmmTMB::betabinomial(link = "logit"),
-#                                   ziformula = ~1) # Intercept only.
-#
-#
-# ## Fitting an interactive (mediated) ZI-binomial GLMM:
+# summary(ttFS_zibin_glmm1) # AIC = 1415.1 (compared to 2105.8 without ZI).
+# summary(ttFS_zibin_glmm1_olre) # AIC = 1382.3 (compared to 1476 without ZI), so the OLRE still
+# # improves the fit compared to the GLM.
+summary(ttFS_zibbin_glm1) # AIC = 1377.5 (compared to 1475.5 without ZI), so the ZIBBIN GLM does
+# slightly better than the BIN GLMM with OLRE.
+summary(ttFS_zibbin_glmm1) # AIC = 1379.5 (compared to 1476.3 without ZI), so the ZIBBIN GLMM does
+# not better than the ZIBBIN GLM (AIC are quite close), but it still performs better than any
+# ZIBIN model.
+
+
+# ### Adding the interaction effect:
+# ## Fitting an interactive (mediated) ZIBIN GLMM:
 # ttFS_zibin_glmm2 <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~
 #                                        c.log_patch_area * c.log_F_metric_d2b1 +
 #                                        clutch_size +
@@ -567,18 +591,30 @@ ttFS_zibbin_glmm1 <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_patch_area +
 #                                   family = "binomial",
 #                                   ziformula = ~1)
 #
-# ## Fitting an interactive (mediated) ZI-binomial GLMM with OLRE:
+# ## Fitting an interactive ZIBIN GLMM with OLRE:
 # ttFS_zibin_glmm2_olre <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~
 #                                             c.log_patch_area * c.log_F_metric_d2b1 +
 #                                             clutch_size +
 #                                             urban_intensity + manag_intensity +
 #                                             light_pollution + noise_m + traffic +
-#                                             min_t_between + laying_day + year + (1|id_obs) + (1|id_nestbox),
+#                                             min_t_between + laying_day + year + (1|id_obs) +
+#                                             (1|id_nestbox),
 #                                   weights = brood_size, data = ntits3,
 #                                   family = "binomial",
 #                                   ziformula = ~1)
 
-## Fitting an interactive (mediated) ZI-beta-binomial GLMM:
+## Fitting an interactive ZIBBIN GLM:
+ttFS_zibbin_glm2 <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~
+                                       c.log_patch_area * c.log_F_metric_d2b1 +
+                                       clutch_size +
+                                       urban_intensity + manag_intensity +
+                                       light_pollution + noise_m + traffic +
+                                       min_t_between + laying_day + year,
+                                  weights = brood_size, data = ntits3,
+                                  family = glmmTMB::betabinomial(link = "logit"),
+                                  ziformula = ~1)
+
+## Fitting an interactive ZIBBIN GLMM:
 ttFS_zibbin_glmm2 <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~
                                         c.log_patch_area * c.log_F_metric_d2b1 +
                                         clutch_size +
@@ -588,289 +624,141 @@ ttFS_zibbin_glmm2 <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~
                                       weights = brood_size, data = ntits3,
                                       family = glmmTMB::betabinomial(link = "logit"),
                                       ziformula = ~1)
-# ## Fitting an interactive (mediated) ZI-beta-binomial GLMM:
-# ttFS_zibbin_glm2 <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~
-#                                        c.log_patch_area * c.log_F_metric_d2b1 +
-#                                        clutch_size +
-#                                        urban_intensity + manag_intensity +
-#                                        light_pollution + noise_m + traffic +
-#                                        min_t_between + laying_day + year,
-#                                   weights = brood_size, data = ntits3,
-#                                   family = glmmTMB::betabinomial(link = "logit"),
-#                                   ziformula = ~1)
-# ttFS_zibbin_glmm2_cent <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ c.log_patch_area *
-#                                              c.log_F_metric_d2b1 +
-#                                             c.clutch_size +
-#                                             urban_intensity + manag_low + manag_high +
-#                                             light_pollution + c.noise_m + c.traffic +
-#                                             c.min_t_between + year + (1|id_nestbox),
-#                                   weights = brood_size, data = ntits3,
-#                                   family = glmmTMB::betabinomial(link = "logit"),
-#                                   ziformula = ~1)
-# summary(ttFS_bin_glm1) # AIC = 2104.5.
-# summary(ttFS_bbin_glm1) # AIC = NA (why?).
-# summary(ttFS_bin_glmm1) # AIC = 1673.8.
-# summary(ttFS_bin_glmm1_olre) # AIC = 1475.6.
-# summary(ttFS_bbin_glmm1) # AIC = 1475.9.
-#
-# summary(ttFS_zibin_glmm1) # AIC = 1415.1.
-# summary(ttFS_zibin_glmm1_olre) # AIC = 1382.3.
-summary(ttFS_zibbin_glmm1) # AIC = 1379.5.
-# summary(ttFS_zibbin_glmm1_cent)
-# summary(ttFS_zibbin_glm1) # AIC = 1377.5.
-#
-# summary(ttFS_zibin_glmm2) # AIC = 1409.5 and significant interaction!
-# summary(ttFS_zibin_glmm2_olre) # AIC = 1379.7 and significant interaction!
-summary(ttFS_zibbin_glmm2) # AIC = 1376.5 and significant interaction!
-# summary(ttFS_zibbin_glm2) # AIC = 1374.5 and significant interaction (and similar estimates to the GLMM too)!
-# summary(ttFS_zibbin_glm2_cent)
-# It seems that, the inclusion of a random effect (RE) strongly improved the fit when the ZI and
-# overdispersion were not accounted for but not when they were. Accounting for the ZI and for overdispersion
-# in the response, whether by using an OLRE or using a beta-binomial distribution, further improved the fit
-# but it is not yet clear which one is best. Differences will have to be assessed through diagnostics. I will
-# thus diagnose them all but, for the sake of brevity, I will not always show the code and comments for all.
+# summary(ttFS_zibin_glmm2) # 1409.5 (compared to 1415.1 without ZI), so the interaction improves
+# # the fit (and is significant)!
+# summary(ttFS_zibin_glmm2_olre) # 1379.7 (compared to 1382.3 without ZI), so the interaction
+# # improves the fit (and is significant) but to a lesser extent than without the OLRE!
+summary(ttFS_zibbin_glm2) # 1374.5 (compared to 1377.5 without ZI), so the interaction improves
+# the fit (and is significant) and this model beats the ZIBIN ones!
+summary(ttFS_zibbin_glmm2) # 1376.5 (compared to 1379.5 without ZI), so it doesn't change much
+# compared to the ZIBBIN GLM, yet it is still better than any ZIBIN model.
 
-# UPDATE: Diagnostics showed that using a beta-binomial distribution was the correct way to go and not using
-# an OLRE. Since, as before, we explored a few reasonable variations of the same model by trying different
-# proxies of the same variable or by tuning the ZI component of the model, we only try it for the beta-
-# binomial specifications of the model, and mostly without RE to avoid convergence issues.
-# Below, code and comments may be related to these exploratory models, but you can re-run the diagnostics for
-# any models by replacing the model name in the code chunks.
+## It seems that, the inclusion of a random effect (RE) strongly improved the fit when the ZI and
+# overdispersion are not accounted for but not otherwise. Accounting for the ZI and overdispersion
+# in the response, whether by using an OLRE or using a beta-binomial distribution, further
+# improved the fit but it is not yet clear which one is best although there's a slight advantage
+# for the ZIBBIN models in terms of AIC.
+# Consequently, we will run the ZIBIN GLMM with OLRE as well as the ZIBBIN GLM(M) through the
+# diagnostic phase to better understand their differences and select which ones will be used for
+# further analyses. Note that for the sake of brevity, I will not always show the code and
+# comments for the diagnostics of all models (but, as usual, it's fairly easy for you to do it by
+# simply switching the models name in the code chunks below).
+
+## UPDATE: Diagnostics showed that using a beta-binomial distribution was the correct way to go and
+# not using an OLRE.
 
 
 
 
 
-### ** 2.1.2. Exploratory modelling ----
-# ______________________________________
-
-## Tuning the ZI part of the model:
-ttFS_zibbin_glm1e <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_patch_area + log_F_metric_d2b1 +
-                                        clutch_size +
-                                        urban_intensity + manag_intensity +
-                                        light_pollution + noise_m + traffic +
-                                        min_t_between + laying_day + year,
-                                      weights = brood_size, data = ntits3,
-                                      family = glmmTMB::betabinomial(link = "logit"),
-                                      ziformula = ~min_t_between) # Intercept only.
-
-ttFS_zibbin_glm1f <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_patch_area + log_F_metric_d2b1 +
-                                        clutch_size +
-                                        urban_intensity + manag_intensity +
-                                        light_pollution + noise_m + traffic +
-                                        min_t_between + laying_day + year,
-                                      weights = brood_size, data = ntits3,
-                                      family = glmmTMB::betabinomial(link = "logit"),
-                                      ziformula = ~log_F_metric_d2b1) # Intercept only.
-
-ttFS_zibbin_glm1g <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_patch_area + log_F_metric_d2b1 +
-                                        clutch_size +
-                                        urban_intensity + manag_intensity +
-                                        light_pollution + noise_m + traffic +
-                                        min_t_between + laying_day + year,
-                                      weights = brood_size, data = ntits3,
-                                      family = glmmTMB::betabinomial(link = "logit"),
-                                      ziformula = ~log_patch_area) # Intercept only.
-
-ttFS_zibbin_glm1h <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_patch_area + log_F_metric_d2b1 +
-                                        clutch_size +
-                                        urban_intensity + manag_intensity +
-                                        light_pollution + noise_m + traffic +
-                                        min_t_between + laying_day + year,
-                                      weights = brood_size, data = ntits3,
-                                      family = glmmTMB::betabinomial(link = "logit"),
-                                      ziformula = ~min_t_between+urban_intensity+year) # Intercept only.
-
-ttFS_zibbin_glmm1h <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_patch_area + log_F_metric_d2b1 +
-                                         clutch_size +
-                                         urban_intensity + manag_intensity +
-                                         light_pollution + noise_m + traffic +
-                                         min_t_between + laying_day + year + (1|id_nestbox),
-                                       weights = brood_size, data = ntits3,
-                                       family = glmmTMB::betabinomial(link = "logit"),
-                                       ziformula = ~min_t_between+urban_intensity+year) # Intercept only.
-
-ttFS_zibbin_glm1i <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_patch_area + log_F_metric_d2b1 +
-                                        clutch_size +
-                                        urban_intensity + manag_intensity +
-                                        light_pollution + noise_m + traffic +
-                                        min_t_between + laying_day + year,
-                                      weights = brood_size, data = ntits3,
-                                      family = glmmTMB::betabinomial(link = "logit"),
-                                      ziformula = ~laying_day+urban_intensity+year) # Intercept only.
-summary(ttFS_zibbin_glm1e) # AIC = 1374.5 vs 1377.5.
-summary(ttFS_zibbin_glm1f) # AIC = 1375.2.
-summary(ttFS_zibbin_glm1g) # AIC = 1376.8.
-summary(ttFS_zibbin_glm1h) # AIC = 1364.7.
-summary(ttFS_zibbin_glmm1h) # AIC = 1366.7 (mind the RE's uselessness).
-summary(ttFS_zibbin_glm1i) # AIC = 1367.
-# I also tried removing "traffic" and it doesn't change things much. When we use the "F-metric" along with
-# "urban_intensity" to model the ZI-part of the model, the effect of the "F-metric" utterly disappear
-# suggesting that connectivity does not influence total fledging failures and its effect in "F models"
-# is actually a surrogate effect from "urban_intensity". So I'll only diagnose the "H models".
-# Similarly, the surprising effects of the temperature proxies might actually be linked to humidity, a
-# variable we could not measure.
-
-ttFS_zibbin_glm2h <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ c.log_patch_area * c.log_F_metric_d2b1 +
-                                        clutch_size +
-                                        urban_intensity + manag_intensity +
-                                        light_pollution + noise_m + traffic +
-                                        min_t_between + laying_day + year,
-                                      weights = brood_size, data = ntits3,
-                                      family = glmmTMB::betabinomial(link = "logit"),
-                                      ziformula = ~min_t_between+urban_intensity+year)
-ttFS_zibbin_glmm2h <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ c.log_patch_area * c.log_F_metric_d2b1 +
-                                         clutch_size +
-                                         urban_intensity + manag_intensity +
-                                         light_pollution + noise_m + traffic +
-                                         min_t_between + laying_day + year + (1|id_nestbox),
-                                       weights = brood_size, data = ntits3,
-                                       family = glmmTMB::betabinomial(link = "logit"),
-                                       ziformula = ~min_t_between+urban_intensity+year)
-summary(ttFS_zibbin_glm2h) # AIC = 1361.8 vs 1374.5.
-summary(ttFS_zibbin_glmm2h) # AIC = 1363.8 vs 1376.5.
-# Note also that replacing "cumdd_before" by "min_t_before" does not change things much!
-
-
-## Fitting a model without both CIMMDD_BETWEEN, MIN_T_BETWEEN and LAYING_DAY (just in case):
-ttFS_zibbin_glm1_notemp <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_patch_area + log_F_metric_d2b1 +
-                                              clutch_size +
-                                              urban_intensity + manag_intensity +
-                                              light_pollution + noise_m + traffic +
-                                              year,
-                                            weights = brood_size, data = ntits3,
-                                            family = glmmTMB::betabinomial(link = "logit"),
-                                            ziformula = ~1) # Intercept only.
-summary(ttFS_zibbin_glm1_notemp) # AIC = 1381.2 vs 1377.5, so it worsen the fit (but makes "urban_intensity"
-# significant)!
-
-
-
-
-
-### ** 2.1.3. Diagnostics and assumption checks ----
+### ** 2.1.2. Diagnostics and assumption checks ----
 # __________________________________________________
 
-### *** 2.1.3.1. Residuals extraction, autocorrelation and collinearity ----
+### *** 2.1.2.1. Residuals extraction, autocorrelation and collinearity ----
 ## Traditional residuals:
 par(.pardefault)
 resid <- stats::resid(ttFS_zibbin_glmm1, type = 'response')
-plot(resid, id = 0.05, idLabels = ~.obs) # Strange distribution of residuals with 2 groups.
+plot(resid, id = 0.05, idLabels = ~.obs) # There seems to be 2 groups of residuals (linked to ZI?).
 # performance::check_outliers(ttFS_zibbin_glmm1) # Does not work for this type of model.
 ntits3[which(resid < -0.4),] # Nestboxes with the lowest residuals = ~0% fledging survival!
 
 # To further investigate patterns, I can plot the residuals against some predictors:
-plot(x = ntits3$noise_m, y = resid) # Seems rather ok although we once again find patterns linked to the
-# sometimes odd distribution of some predictors. However, be reminded that simulated residuals will be
-# more useful).
-# plot(ttHSy_ziglmm1, id_nestbox~stats::resid(.)) # Does not work for this type of model.
-# plot(ttHSy_ziglmm1, site~stats::resid(.)) # Does not work for this type of model.
+plot(x = ntits3$noise_m, y = resid) # Seems rather ok although we once again find patterns linked
+# to the sometimes odd distribution of some predictors. However, be reminded that simulated
+# residuals will be more useful).
+# plot(ttFS_zibbin_glmm1, id_nestbox~stats::resid(.)) # Does not work for this type of model.
+# plot(ttFS_zibbin_glmm1, site~stats::resid(.)) # Does not work for this type of model.
+
 
 ## Simulation-based scaled residuals computation ({DHARMa} method):
-simu.resid <- DHARMa::simulateResiduals(fittedModel = ttFS_zibbin_glmm1, n = 1000, re.form = NULL)
-simu.residh <- DHARMa::simulateResiduals(fittedModel = ttFS_zibbin_glmm1h, n = 1000, re.form = NULL)
-simu.resid2 <- DHARMa::simulateResiduals(fittedModel = ttFS_zibbin_glmm2, n = 1000, re.form = NULL)
-simu.resid2h <- DHARMa::simulateResiduals(fittedModel = ttFS_zibbin_glmm2h, n = 1000, re.form = NULL)
-simu.resido <- DHARMa::simulateResiduals(fittedModel = ttFS_zibin_glmm1_olre,
-                                         n = 1000, re.form = NULL)
-simu.resido2 <- DHARMa::simulateResiduals(fittedModel = ttFS_zibin_glmm2_olre,
-                                          n = 1000, re.form = NULL) # The 're.form' argument is to base
-# simulations on the model unconditional of the random effects (and only works for {lme4} formulations). It
-# is useful for testing dispersion (see below) but can be omitted eventually.
+simu.resid <- DHARMa::simulateResiduals(fittedModel = ttFS_zibbin_glmm1,
+                                        n = 1000, re.form = NULL) # The 're.form' argument is to
+# base simulations on the model unconditional of the random effects (and only works for {lme4}
+# formulations). It is useful for testing dispersion (see below) but can be omitted eventually.
+simu.resid2 <- DHARMa::simulateResiduals(fittedModel = ttFS_zibbin_glmm2,
+                                        n = 1000, re.form = NULL)
 plot(simu.resid) # Ok.
-plot(simu.residh) # Ok.
 plot(simu.resid2) # Ok.
-plot(simu.resid2h) # Ok.
-plot(simu.resido) # Ok.
-plot(simu.resido2) # Ok.
 DHARMa::outliers(simu.resid) # Ok.
-DHARMa::outliers(simu.residh) # Ok.
 DHARMa::outliers(simu.resid2) # Ok.
-DHARMa::outliers(simu.resid2h) # Ok.
-DHARMa::outliers(simu.resido) # Ok.
-DHARMa::outliers(simu.resido2) # Ok.
+
 
 ## Autocorrelation and collinearity:
 DHARMa::testSpatialAutocorrelation(simulationOutput = simu.resid,
-                                   x = ntits3$coord_x, y = ntits3$coord_y, plot = TRUE) # Spatial auto-
-# correlation detected only for the OLRE models!
+                                   x = ntits3$coord_x, y = ntits3$coord_y, plot = TRUE) # Spatial
+# autocorrelation detected only for the OLRE models!
 performance::check_autocorrelation(ttFS_zibbin_glmm1) # Ok.
-performance::check_collinearity(ttFS_zibbin_glmm1h) # Ok for the beta-binomial models (highest VIF value for
-# the first ZIBBIN = 3.44 for the F-metric while it was 4.03 for the second model), even the exploratory ones.
-# For the OLRE models however, alarming multicollinearity issues have been detected with a moderate correlation
-# linked to "clutch_size" being present, several VIF values > 4 and even 8.5 for the "F-metric" (even though
-# things were a bit better for the interactive model).
+performance::check_collinearity(ttFS_zibbin_glmm1) # Ok for the beta-binomial models (highest VIF
+# value for the first ZIBBIN = 3.44 for the F-metric while it was 4.03 for the second model).
+# For the OLRE models however, alarming multicollinearity issues have been detected with a
+# moderate correlation linked to "clutch_size" being present, several VIF values > 4 and even 8.5
+# for the "F-metric" (even though things were a bit better for the interactive model).
 # Interestingly, no multicollinearity was detected for the BBIN or the BIN_OLRE models either.
-stats::vcov(ttFS_zibbin_glmm1) # But values of the covariance matrix seem ok.
+stats::vcov(ttFS_zibbin_glmm1) # Ok.
+
 
 ## Heteroscedasticity and possible model misspecifications:
 par(.pardefault)
-DHARMa::plotResiduals(simu.resido2, form = ntits3$log_patch_area)
-DHARMa::plotResiduals(simu.resido2, form = ntits3$log_patch_perim)
-DHARMa::plotResiduals(simu.resido2, form = ntits3$log_woody_area)
-DHARMa::plotResiduals(simu.resido2, form = ntits3$log_woody_vw)
-DHARMa::plotResiduals(simu.resido2, form = ntits3$log_F_metric_d2b1)
-DHARMa::plotResiduals(simu.resido2, form = ntits3$Rr_metric_d2c1)
-DHARMa::plotResiduals(simu.resido2, form = ntits3$species)
-DHARMa::plotResiduals(simu.resido2, form = ntits3$clutch_size)
-DHARMa::plotResiduals(simu.resido2, form = ntits3$urban_intensity) # Deviation detected (for OLRE model1)!
-DHARMa::plotResiduals(simu.resido2, form = ntits3$manag_intensity)
-DHARMa::plotResiduals(simu.resido2, form = ntits3$log_herb_area)
-DHARMa::plotResiduals(simu.resido2, form = ntits3$sqrt_built_vol) # Deviation detected (for OLRE model1)!
-DHARMa::plotResiduals(simu.resido2, form = ntits3$light_pollution)
-DHARMa::plotResiduals(simu.resido2, form = ntits3$noise_m)
-DHARMa::plotResiduals(simu.resido2, form = ntits3$traffic)
-DHARMa::plotResiduals(simu.resido2, form = ntits3$cumdd_30)
-DHARMa::plotResiduals(simu.resido2, form = ntits3$cumdd_between)
-DHARMa::plotResiduals(simu.resido2, form = ntits3$min_t_between)
-DHARMa::plotResiduals(simu.resido2, form = ntits3$laying_day)
-DHARMa::plotResiduals(simu.resido2, form = ntits3$year)
-# For the ZIBBIN models, no deviations were detected. For the models with OLRE, worrying deviations have been
-# found for "urban_intensity" (likely linked to the "built volume").
-# For the exploratory models, everything seems fine.
+DHARMa::plotResiduals(simu.resid, form = ntits3$log_patch_area)
+DHARMa::plotResiduals(simu.resid, form = ntits3$log_patch_perim)
+DHARMa::plotResiduals(simu.resid, form = ntits3$log_woody_area)
+DHARMa::plotResiduals(simu.resid, form = ntits3$log_woody_vw)
+DHARMa::plotResiduals(simu.resid, form = ntits3$log_F_metric_d2b1)
+DHARMa::plotResiduals(simu.resid, form = ntits3$Rr_metric_d2c1)
+DHARMa::plotResiduals(simu.resid, form = ntits3$species)
+DHARMa::plotResiduals(simu.resid, form = ntits3$clutch_size)
+DHARMa::plotResiduals(simu.resid, form = ntits3$urban_intensity) # Deviation detected (for OLRE)!
+DHARMa::plotResiduals(simu.resid, form = ntits3$manag_intensity)
+DHARMa::plotResiduals(simu.resid, form = ntits3$log_herb_area)
+DHARMa::plotResiduals(simu.resid, form = ntits3$light_pollution)
+DHARMa::plotResiduals(simu.resid, form = ntits3$noise_m)
+DHARMa::plotResiduals(simu.resid, form = ntits3$traffic)
+DHARMa::plotResiduals(simu.resid, form = ntits3$cumdd_30)
+DHARMa::plotResiduals(simu.resid, form = ntits3$cumdd_between)
+DHARMa::plotResiduals(simu.resid, form = ntits3$min_t_between)
+DHARMa::plotResiduals(simu.resid, form = ntits3$laying_day)
+DHARMa::plotResiduals(simu.resid, form = ntits3$year)
+# For the ZIBBIN models, no deviations were detected. For the models with OLRE, worrying deviations
+# have been found for "urban_intensity" (likely linked to the "built volume").
 
 
 
-### *** 2.1.3.2. Distribution and dispersion ----
+### *** 2.1.2.2. Distribution and dispersion ----
 ## Assessing over or under-dispersion:
 DHARMa::testDispersion(simu.resid) # Ok for all models.
-performance::check_overdispersion(x = ttFS_zibbin_glmm1) # Overdispersion detected! However, note that this test
-# is known to be inaccurate for ZI-models (see the function's help page). If I run it on the non-ZI model
-# (i.e. 'ttFS_bbin_glmm1'), the dispersion ratio is much lower, yet we may still need to account for that.
-# ATTENTION: Classical overdispersion tests cannot be used to detect overdispersion when OLRE is used to
-# account for it, and the same is likely true for beta-binomial models. So I'll ignore it now.
+performance::check_overdispersion(x = ttFS_zibbin_glmm1) # Overdispersion detected (NOTE: for the
+# regular non BBIN models)! However, note that this test is known to be inaccurate for ZI-models
+# (see the function's help page). If I run it on the non-ZI model (i.e. 'ttFS_bbin_glmm1'), the
+# dispersion ratio is much lower, yet we may still need to account for that.
+# ATTENTION: classical overdispersion tests cannot be used to detect overdispersion when OLRE is
+# used to account for it, and the same is likely true for beta-binomial models. So I'll ignore
+# it now.
+
 
 ## Distribution of the predicted probabilities:
-probabilities <- stats::predict(object = ttFS_zibbin_glmm2h, type = "response") # Extract the predicted
-# probabilities.
+probabilities <- stats::predict(object = ttFS_zibbin_glmm1, type = "response") # Extract the
+# predicted probabilities.
 par(mfrow= c(1,2))
 hist(probabilities, main = "Predicted proportions", xlab = "fledging survival")
 hist(ntits3$fledgling_nb/ntits3$brood_size, main = "Observed proportions", xlab = "Fledging rate")
 par(.pardefault)
-# The ZIBBIN models globally fail to correctly predict the data. Prediction ranges are too narrow, the mode is
-# around 0.7 instead of 1 and models do not predict total successes or failures (even though the interaction
-# model does a little better). The models with OLRE predict slightly better than the ZIBBIN (mode at 0.8) but
-# it's still not very satisfactory.
-# Interestingly, the overdispersed binomial GLMM without ZI ('ttFS_bin_glmm1') does a better job at predicting
-# the observed data than any other model, and the binomial GLMM without ZI but with OLRE ('ttFS_bin_glmm1_olre')
-# predicts the data very well (see below)!
+# The ZIBBIN models globally fail to correctly predict the data. Prediction ranges are too narrow,
+# the mode is around 0.7 instead of 1 and models do not predict total successes or failures (even
+# though the interaction model does a little better). The models with OLRE predict slightly better
+# than the ZIBBIN (mode at 0.8) but it's still not very satisfactory.
+# Interestingly, the overdispersed binomial GLMM without ZI ('ttFS_bin_glmm1') does a better job
+# at predicting the observed data than any other model, and the binomial GLMM without ZI but with
+# OLRE ('ttFS_bin_glmm1_olre') predicts the data very well! HOWEVER, predictions are not THAT off,
+# we deem safer to favour sound diagnostics over accurate predictions, and thus stick with the
+# ZIBBIN models (ZI and overdispersion are unarguable)!
+
 
 ## Zero-inflation:
-DHARMa::testZeroInflation(simu.resid_nozi) # Significant for the non-ZI models!
-# Testing with the non-ZI GLMM:
-simu.resid_nozi <- DHARMa::simulateResiduals(fittedModel = ttFS_bin_glmm1_olre, n = 1000)
-plot(simu.resid_nozi) # Slight or strong deviations detected for the non-ZI models (depending on the model)!
-noziprobabilities <- stats::predict(object = ttFS_bin_glmm1_olre, type = "response") # Extract the predicted
-# probabilities.
-par(mfrow= c(1,2))
-hist(noziprobabilities, main = "Predicted proportions (wo ZI)", xlab = "fledging survival")
-hist(ntits3$fledgling_nb/ntits3$brood_size, main = "Observed proportions", xlab = "Fledging rate")
-# Surprisingly, the model seems to better fit the observed proportions, even though it still under-predicts
-# the proportion of failures.
+DHARMa::testZeroInflation(simu.resid) # Significant for the non-ZI models!
 
 
 
-### *** 2.1.3.3. Linearity ----
+### *** 2.1.2.3. Linearity ----
 ## Plotting the response on the logit scale (= log odds) against predictors:
 # Format data:
 ntits3 %>% dplyr::select(log_patch_area, log_patch_perim, log_woody_vw, log_woody_area,
@@ -882,7 +770,8 @@ ntits3 %>% dplyr::select(log_patch_area, log_patch_perim, log_woody_vw, log_wood
                          light_pollution, noise_m,
                          cumdd_between, min_t_between, laying_day) -> mydata
 predictors <- colnames(mydata)
-probabilities <- stats::predict(object = ttFS_zibbin_glmm1, type = "response") # Extract probabilities!
+probabilities <- stats::predict(object = ttFS_zibbin_glmm1,
+                                type = "response") # Extract probabilities!
 # Bind the logit and tidying the data for plot (ggplot2, so long format):
 mydata <- mydata %>%
   dplyr::mutate(logit = log(probabilities/(1-probabilities))) %>%
@@ -893,83 +782,67 @@ ggplot2::ggplot(mydata, ggplot2::aes(y = logit, x = predictor.value))+
   ggplot2::geom_smooth(method = "loess") +
   ggplot2::theme_bw() +
   ggplot2::facet_wrap(~predictors, scales = "free_x") # Linearity is globally respected except for
-# "min_t_between" which is U-shaped (a transformation could perhaps be used).
+# one or two predictors that are U-shaped (a transformation could perhaps be used).
 
 
 
-### *** 2.1.3.4. Goodness-of-fit (GOF) and performances ----
+### *** 2.1.2.4. Goodness-of-fit (GOF) and performances ----
 ## GOF test of Pearson's Chi2 residuals:
-dat.resid <- sum(stats::resid(ttFS_zibbin_glmm1, type = "pearson")^2)
-1 - stats::pchisq(dat.resid, stats::df.residual(ttFS_zibbin_glmm1)) # p = 0 (mistake?).
+# dat.resid <- sum(stats::resid(ttFS_zibbin_glmm1, type = "pearson")^2)
+# 1 - stats::pchisq(dat.resid, stats::df.residual(ttFS_zibbin_glmm1)) # Does work for this kind of
+# # model.
 
 ## Computing a pseudo-R2:
-performance::r2_nakagawa(ttFS_zibbin_glmm1, tolerance = 0.00000001)
-# [Additive model]: Marg_R2_glmm = 0.8; Cond_R2_glmm = 0.8 (but may be unreliable due to difficulties to
-# compute RE variances)!
-performance::r2_nakagawa(ttFS_zibbin_glmm1h, tolerance = 0.00000001)
-# [Additive model]: Marg_R2_glmm = 0.79; Cond_R2_glmm = NA (but may be unreliable due to difficulties to
-# compute RE variances)!
-performance::r2_nakagawa(ttFS_zibbin_glmm2, tolerance = 0.00000001)
-# [Interactive model]: Marg_R2_glmm = 0.8; Cond_R2_glmm = 0.8 (but may be unreliable due to difficulties to
-# compute RE variances)!
-performance::r2_nakagawa(ttFS_zibbin_glmm2h, tolerance = 0.00000001)
-# [Interactive model]: Marg_R2_glmm = 0.8; Cond_R2_glmm = 0.8 (but may be unreliable due to difficulties to
-# compute RE variances)!
-performance::r2_nakagawa(ttFS_zibin_glmm1_olre, tolerance = 0.00000001)
-# [Additive model]: Marg_R2_glmm = 0.17; Cond_R2_glmm = NA (but may be unreliable due to difficulties to
-# compute RE variances)!
-performance::r2_nakagawa(ttFS_zibin_glmm2_olre, tolerance = 0.00000001)
-# [Interactive model]: Marg_R2_glmm = 0.16; Cond_R2_glmm = 0.16 (but may be unreliable due to difficulties to
-# compute RE variances)!
+performance::r2_nakagawa(ttFS_zibbin_glmm1, tolerance = 0.0000000000001)
+# [Additive model]: Marg_R2_glmm = 0.19; Cond_R2_glmm = 0.19 (but may be unreliable due to
+# difficulties to compute RE variances)!
+performance::r2_nakagawa(ttFS_zibbin_glmm2, tolerance = 0.0000000000001)
+# [Interactive model]: Marg_R2_glmm = 0.19; Cond_R2_glmm = 0.19 (but may be unreliable due to
+# difficulties to compute RE variances)!
 
 ## Likelihood-based evaluation of effects inclusion:
 zzz <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_patch_area + log_F_metric_d2b1 +
-                          clutch_size +
-                          urban_intensity + manag_intensity +
-                          light_pollution + noise_m + traffic +
-                          cumdd_between + year,
-                        weights = brood_size, data = ntits3,
-                        family = glmmTMB::betabinomial(link = "logit"),
-                        ziformula = ~1) # Intercept only.
+                                        clutch_size +
+                                        urban_intensity + manag_intensity +
+                                        light_pollution + noise_m + traffic +
+                                        min_t_between + laying_day + year + (1|site),
+                                      weights = brood_size, data = ntits3,
+                                      family = glmmTMB::betabinomial(link = "logit"),
+                                      ziformula = ~1) # Intercept only.
 zzz2 <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_patch_area + log_F_metric_d2b1 +
-                           clutch_size +
-                           urban_intensity + manag_intensity +
-                           light_pollution + noise_m + traffic +
-                           cumdd_between + year + (1|id_obs),
-                         weights = brood_size, data = ntits3,
-                         family = "binomial",
-                         ziformula = ~1) # Intercept only.
-summary(zzz) # Beta-binomial models: The non-mixed model gives AIC = 1378.2 while the mixed-model gave an AIC
-# of 1380.2 (with "id_nestbox"), or 1380.2 (with "id_patch"), or 1380 (with "site"), or 1382 (with "site"
-# and "id_nestbox") or 1382.2 (with "id_patch" and "id_nestbox")! It thus appears that the the use of
-# RE is not useful here!
-summary(zzz2) # OLRE models: The model without other RE than the OLRE gives AIC = 1379.6 while the RE-model
-# gave an AIC of 1381.6 (with "id_nestbox"), or 1381.6 (with "id_patch"), or 1381.6 (with "site"), or 1383.6
-# (with "site" and "id_nestbox") or 1383.6 (with "id_patch" and "id_nestbox")! It thus appears that the the use
-# of additional RE is not useful here!
+                                        clutch_size +
+                                        urban_intensity + manag_intensity +
+                                        light_pollution + noise_m + traffic +
+                                        min_t_between + laying_day + year +
+                           (1|id_nestbox) + (1|site),
+                                      weights = brood_size, data = ntits3,
+                                      family = glmmTMB::betabinomial(link = "logit"),
+                                      ziformula = ~1) # Intercept only.
+summary(zzz) # 1379.1.
+summary(zzz2) # 1381.1.
+# Beta-binomial models: The non-mixed model gives AIC = 1377.5 while mixed-models yield an AIC
+# of 1379.5 (with "id_nestbox"), 1379.1. (with "site"), or 1381.1. (with both). It thus appears
+# that the the use of RE is not useful here! We'll still use the GLMM_1 for further analyses, just
+# in case (and because some consider that you should always include RE when you can, although this
+# is rather a question of statistical philosophy, I reckon).
 
 # Importance of the fixed effects:
 ttFS_zibbin_glmm0 <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ 1 + (1|id_nestbox),
                                       weights = brood_size, data = ntits3,
                                       family = glmmTMB::betabinomial(link = "logit"),
                                       ziformula = ~1)
-ttFS_zibin_glmm0_olre <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ 1 + (1|id_nestbox) + (1|id_obs),
-                                          weights = brood_size, data = ntits3,
-                                          family = "binomial",
-                                          ziformula = ~1)
-summary(ttFS_zibbin_glmm0) # AIC = 1462.9 vs 1380.2, so the full model is clearly far better!
-summary(ttFS_zibin_glmm0_olre) # AIC = 1473.5 vs 1381.6, so the full model is clearly far better!
+summary(ttFS_zibbin_glmm0) # AIC = 1462.9 vs 1379.5, so the full model is clearly far better!
 
 
 
 
 
-### ** 2.1.4. Inference and predictions ----
+### ** 2.1.3. Inference and predictions ----
 # __________________________________________
 
 ##### TO BE RUN §§§ -----
 
-### *** 2.1.4.1. Hypotheses testing: LRT for the additive and interactive effect of the F-metric ----
+### *** 2.1.3.1. Hypotheses testing: LRT for the additive and interactive effect of the F-metric ----
 ## For the additive effect of the connectivity metric:
 ttFS_zibbin_glmm0 <- stats::update(ttFS_zibbin_glmm1, .~. -log_F_metric_d2b1)
 summary(ttFS_zibbin_glmm0) # AIC = 1383.3 vs 1379.5 (hypothesis 1 likely validated)!
@@ -993,7 +866,7 @@ res.LRT_hypo2 <- stats::anova(object = ttFS_zibbin_glmm1, ttFS_zibbin_glmm2, tes
 
 
 
-### *** 2.1.4.2. Bootstrapped confidence intervals for estimated parameters ----
+### *** 2.1.3.2. Bootstrapped confidence intervals for estimated parameters ----
 res.ttFSy_addeff_CI <- confint(ttFS_zibbin_glmm1)
 tt <- as.data.frame(res.ttFSy_addeff_CI)
 tt$parameters <- rownames(tt)
@@ -1041,7 +914,7 @@ base_data |>
 
 
 
-### *** 2.1.4.3. Conclusion ----
+### *** 2.1.3.3. Conclusion ----
 # For the initial model:
 summary(ttFS_zibbin_glmm1) # AIC = 1379.5 and both R2_glmm = 0.8!
 summary(ttFS_zibbin_glmm2) # AIC = 1376.5 and both R2_glmm = 0.8!
@@ -1096,7 +969,7 @@ summary(ttFS_zibbin_glmm2h) # AIC = 1363.8 and both R2_glmm = 0.8.
 
 
 
-### *** 2.1.4.4. Interaction model exploration ----
+### *** 2.1.3.4. Interaction model exploration ----
 ## Creating a 2D interaction plot:
 sjPlot::plot_model(ttFS_zibbin_glmm2, type = "pred",
                    terms = c("c.log_patch_area [all]",
