@@ -360,28 +360,17 @@ res.LRT_hypo2 <- stats::anova(object = ttCy_comglmm1, ttCy_comglmm2, test = "LRT
 
 
 
-### *** 1.1.3.2. Bootstrapped confidence intervals for estimated parameters ----
+### *** 1.1.3.2. Confidence intervals for estimated parameters ----
 res.ttCy_addeff_CI <- confint(ttCy_comglmm1)
 tt <- as.data.frame(res.ttCy_addeff_CI)
 tt$parameters <- rownames(tt)
 readr::write_csv2(x = tt,
                   file = here::here("output", "tables", "res.ttCy_regCI_addeff.csv"))
 
-# ## Bootstrapped CI (as for the LRT, it takes hours to run, so I leave it in "comments" to avoid
-# crashing my R session by mistake):
-# tictoc::tic("Bootstrap CI for the additive COM-Poisson GLMM parameters")
-# res.ttCy_addeff_CI_boot <- confint(ttCy_comglmm1, method="boot")
-# tt <- as.data.frame(res.ttCy_addeff_CI_boot)
-# tt$parameters <- rownames(tt)
-# readr::write_csv2(x = tt,
-#                   file = here::here("output", "tables", "res.ttCy_bootCI_addeff.csv"))
-# tictoc::toc() # DISCLAIMER: took ~4h10 to run!
-
 
 
 ### *** 1.1.3.3. Plotting results ----
-tt2 <- tibble::as_tibble(tt) # Mind the 'tt' version you use (the regular CI or the boostrap one),
-# but they give pretty similar results, as expected.
+tt2 <- tibble::as_tibble(tt)
 tt2 %>% tibble::add_row("2.5 %" = 0, "97.5 %" = 0, parameters = "clutch_size",.after = 4) %>%
   as.data.frame() -> tt2
 
@@ -390,10 +379,11 @@ uu2 %>% tibble::add_row(value = 0,.after = 4) %>%
   as.data.frame() -> uu2
 
 base_data <- tibble::tibble(
-  parameters = c("Intercept", "Local patch area", "Flux metric", "Species (Cyanistes caeruleus)", "Clutch size",
-                 "Urban intensity", "Management intensity (moderate)", "Management intensity (intensive)",
-                 "Light pollution", "Noise pollution", "Traffic", "Temperature", "Laying day", "Year (2020)",
-                 "Year (2021)", "Year (2022)"),
+  parameters = c("Intercept", "Local patch area", "Flux metric", "Species (Cyanistes caeruleus)",
+                 "Clutch size", "Urban intensity", "Management intensity (moderate)",
+                 "Management intensity (intensive)", "Light pollution", "Noise pollution",
+                 "Traffic", "Temperature", "Laying day", "Year (2020)", "Year (2021)",
+                 "Year (2022)"),
   mean = c(uu2[1:16,1]),
   lower = c(tt2[1:16,1]),
   upper = c(tt2[1:16,2]))
@@ -840,51 +830,35 @@ summary(ttFS_zibbin_glmm0) # AIC = 1462.9 vs 1379.5, so the full model is clearl
 ### ** 2.1.3. Inference and predictions ----
 # __________________________________________
 
-##### TO BE RUN §§§ -----
-
 ### *** 2.1.3.1. Hypotheses testing: LRT for the additive and interactive effect of the F-metric ----
 ## For the additive effect of the connectivity metric:
 ttFS_zibbin_glmm0 <- stats::update(ttFS_zibbin_glmm1, .~. -log_F_metric_d2b1)
 summary(ttFS_zibbin_glmm0) # AIC = 1383.3 vs 1379.5 (hypothesis 1 likely validated)!
+ttFS_zibbin_glm0 <- stats::update(ttFS_zibbin_glm1, .~. -log_F_metric_d2b1)
+summary(ttFS_zibbin_glm0) # AIC = 1381.3 vs 1377.5 (hypothesis 1 likely validated)!
 
 ## Regular LRT (temporary results):
 res.LRT_hypo1 <- stats::anova(object = ttFS_zibbin_glmm0, ttFS_zibbin_glmm1, test = "LRT")
 res.LRT_hypo2 <- stats::anova(object = ttFS_zibbin_glmm1, ttFS_zibbin_glmm2, test = "LRT")
-
-## I do not run PB-based LRT for now as they take too long to run.
-
-# res.LRT_addeff <- pbkrtest::PBmodcomp(ttFS_ziglmm1,
-#                                       ttFS_ziglmm0, nsim = 500, seed = 56) # Took ~??? to run!
-# readr::write_csv2(x = res.LRT_addeff$test, file = here::here("output", "tables",
-#                                                              "res.ntitsFSy_LRT_addeff.csv"))
-# # The LRT is not significant, indicating that our connectivity metric does not improve the description of
-# # the data here.
-
-## For the interaction effect:
-# Since even the additive model is NOT SIGNIFICANT, there is no point in testing the effect of the
-# interactive (mediated) model.
+# stats::anova(object = ttFS_zibbin_glm0, ttFS_zibbin_glm1, test = "LRT")
+# stats::anova(object = ttFS_zibbin_glm1, ttFS_zibbin_glm2, test = "LRT")
+## As, in this case, results from the GLMs give exactly the same results as those from GLMMs, the
+# use of a parametric-bootstrap LRT does not seem useful here. So we'll simply stick with the
+# regular LRT results, which are clearly significant thus validating both our hypotheses.
 
 
 
-### *** 2.1.3.2. Bootstrapped confidence intervals for estimated parameters ----
+### *** 2.1.3.2. Confidence intervals for estimated parameters ----
 res.ttFSy_addeff_CI <- confint(ttFS_zibbin_glmm1)
 tt <- as.data.frame(res.ttFSy_addeff_CI)
 tt$parameters <- rownames(tt)
 readr::write_csv2(x = tt,
                   file = here::here("output", "tables", "res.ttFSy_regCI_addeff.csv"))
-#
-# tictoc::tic("Bootstrap CI for additive GLMM parameters")
-# res.ntitsFSy_addeff_CI_boot <- confint(ttFS_zibbin_glmm1, method="boot")
-# tt <- as.data.frame(res.ntitsFSy_addeff_CI_boot)
-# tt$parameters <- rownames(tt)
-# readr::write_csv2(x = tt,
-#                   file = here::here("output", "tables", "res.ntitsFSy_bootCI_addeff.csv"))
-# tictoc::toc() # DISCLAIMER: took ~1h45 to run!
 
 
 
-### *** XXXXXXX Plotting results ----
-# Plots without INTERCEPT!
+### *** 2.1.3.3. Plotting results ----
+## Plotting the confidence intervals:
 tt2 <- tibble::as_tibble(tt)
 tt2 %>% tibble::add_row("2.5 %" = 0, "97.5 %" = 0, parameters = "species",.after = 3) %>%
   as.data.frame() -> tt2
@@ -894,10 +868,11 @@ uu2 %>% tibble::add_row(value = 0,.after = 3) %>%
   as.data.frame() -> uu2
 
 base_data <- tibble::tibble(
-  parameters = c("Intercept", "Local patch area", "Flux metric", "Species (Cyanistes caeruleus)", "Clutch size",
-                 "Urban intensity", "Management intensity (moderate)", "Management intensity (intensive)",
-                 "Light pollution", "Noise pollution", "Traffic", "Temperature", "Laying day", "Year (2020)",
-                 "Year (2021)", "Year (2022)"),
+  parameters = c("Intercept", "Local patch area", "Flux metric", "Species (Cyanistes caeruleus)",
+                 "Clutch size", "Urban intensity", "Management intensity (moderate)",
+                 "Management intensity (intensive)", "Light pollution", "Noise pollution",
+                 "Traffic", "Temperature", "Laying day", "Year (2020)", "Year (2021)",
+                 "Year (2022)"),
   mean = c(uu2[1:16,1]),
   lower = c(tt2[1:16,1]),
   upper = c(tt2[1:16,2]))
@@ -913,79 +888,25 @@ base_data |>
   forestplot::fp_set_zebra_style("#EFEFEF")
 
 
-
-### *** 2.1.3.3. Conclusion ----
-# For the initial model:
-summary(ttFS_zibbin_glmm1) # AIC = 1379.5 and both R2_glmm = 0.8!
-summary(ttFS_zibbin_glmm2) # AIC = 1376.5 and both R2_glmm = 0.8!
-# Diagnostics ran for these initial models indicated that the model fit the data relatively well although
-# prediction ranges are too narrow and the models fail to predict total failures and successes! It is
-# possible that the ZI forces the models to predict medium values.
-# Interestingly and inexplicably, some of the models without ZI (especially the binomial GLMM with OLRE)
-# predicted the observed data far better but yielded worrying diagnostics and had lower AIC values than the
-# retained models.Remember that the retained models use a beta-binomial family as the response displayed
-# overdispersion without it. Models that did not account for this overdispersion also raised other red flags.
-# As recommended by Harrison (2014), we compared the beta-binomial models with models including OLRE but the
-# latter models also displayed some problematic issues such as concerning multicollinearity, autocorrelation
-# and quantile deviations. Diagnostics from the beta-binomial models were all satisfactory if we excluded
-# "species" from the models as it is collinear with "clutch_size". We thus chose to keep "clutch_size" as
-# it is a more informative predictor and yielded better diagnostics. However, it should be noted that there
-# was a species effect as blue tits tended to have a lower fledging survival than Parus major:
-ntits3 %>% dplyr::mutate(fledging_success = fledgling_nb/clutch_size) %>%
-  dplyr::group_by(species) %>%
-  dplyr::summarise(mean_fs = mean(fledging_success)) # Note that this mean fledging survival does not account
-# for the effect of the covariates unlike a coefficient estimate (you could alternatively fit a model
-# replacing "clutch_size" by "species" or using both, to estimate a more accurate effect).
-# Finally, it also appears that for this response variable the use of mixed models was not necessary.
-## Significant variables: F-metric (++), clutch_size (-), manag_high (--), laying_day (--), and year2022 (+++).
-## For the interactive (moderated) model, the INTERACTION TERM was also significant (--) but the F-metric was
-# not anymore, which could be a sign of a cross-over interaction. Furthermore, light_pollution (-) also
-# turned out significant in the interactive model (with only a trend in the additive one)!
-## Hypothesis 1 and 2 possibly validated (AIC = 1383.3 vs 1379.5)!
-
-
-# For the exploratory models:
-summary(ttFS_zibbin_glmm1h) # AIC = 1366.7 and both R2_glmm = 0.79.
-## Significant variables: F-metric (++), clutch_size (-), manag_high (--), laying_day (--), and year2022 (+++),
-# and also [urban_intensity (+), year2021 and year2022 (---) for the ZI component]!
-## Almost significant variables: [min_t_between (+) for the ZI component]!
-summary(ttFS_zibbin_glmm2h) # AIC = 1363.8 and both R2_glmm = 0.8.
-## Significant variables: clutch_size (-), manag_high (--), light_pollution (-), laying_day (--) and
-# year2022 (+++), and the INTERACTION EFFECT (--); and also [urban_intensity (+), year2021 and year2022 (---)
-# for the ZI component]!
-## Almost significant variables: the F-metric (+) and also [min_t_between (+) for the ZI component]!
-## Hypothesis 2 likely validated with a possible cross-over interaction!
-# Diagnostics for these models were mostly ok, there was no outliers, deviations, dispersion or
-# distributional problems.
-# Predictions were fairly ok but the models still made too narrow predictions and failed to correctly
-# predict total successes and failures.
-
-# I also tried removing "traffic" and it didn't change things much. When we used the "F-metric" along with
-# "urban_intensity" to model the ZI-part of the model, the effect of the "F-metric" utterly disappeared
-# suggesting that connectivity does not influence total fledging failures and its effect in "F models" was
-# actually a surrogate effect from "urban_intensity".
-
-## Since the interaction effects turned out significant, we have to explore them graphically to interpret them!
-
-
-
-### *** 2.1.3.4. Interaction model exploration ----
-## Creating a 2D interaction plot:
+## Plotting and exploring the interaction effect:
+# Creating a 2D interaction plot:
 sjPlot::plot_model(ttFS_zibbin_glmm2, type = "pred",
                    terms = c("c.log_patch_area [all]",
                              "c.log_F_metric_d2b1 [-1.82, -0.3, 0, 0.32, 1.12]"),
-                   mdrt.values = "quart", # Only useful if `type = "int"` is used (i.e. automatic plotting
-                   # of interaction effects). If used, only plots the 3 quartile values for the moderator.
+                   mdrt.values = "quart", # Only useful if `type = "int"` is used (i.e. automatic
+                   # plotting of interaction effects). If used, only plots the 3 quartile values
+                   # for the moderator.
+                   bias_correction = TRUE,
                    title = "", # If I don't let it blank (and delete it), it sets a title by default.
                    axis.title = c("Local patch area",
                                   "Predicted fledging survival"),
                    legend.title = "Flux metric",
-                   colors = c("darkred", "white", "darkorange", "darkolivegreen3", "chartreuse4"), # For
-                   # a reason I don't understand, the 2nd colour in the vector is not taken into account!
+                   colors = c("darkred", "white", "darkorange", "darkolivegreen3",
+                              "chartreuse4"), # For a reason I don't understand, the 2nd colour in
+                   # the vector is not taken into account!
                    show.data = TRUE, # Not available, I don't know why.
                    line.size = 1)
-summary(ttFS_zibbin_glmm2)
-summary(ntits3)
+
 
 
 ## Creating a 3D interaction plot:
@@ -1022,5 +943,79 @@ lattice::wireframe(fledging_rate ~ c.log_patch_area + c.log_F_metric_d2b1, data=
                    col.regions = rainbow(100, s = 1, v = 1, start = 0, end = max(1,100 - 1)/100,
                                          alpha = .5), # Controls the transparency.
                    screen = list(z = -60, x = -75)) # Z controls the rotation.
+
+
+
+
+
+
+
+
+# ***
+
+
+
+### *** 2.1.3.3. Conclusion ----
+# For the initial model:
+summary(ttFS_zibbin_glmm1) # AIC = 1379.5 and both R2_glmm = 0.19!
+summary(ttFS_zibbin_glmm2) # AIC = 1376.5 and both R2_glmm = 0.19!
+# Diagnostics ran for these models indicated that the model fit the data relatively well although
+# prediction ranges are too narrow and the models fail to predict total failures and successes!
+# It is possible that the ZI forces the models to predict medium values.u
+# Interestingly and inexplicably, some of the models without ZI (especially the binomial GLMM
+# with OLRE) predicted the observed data far better but yielded worrying diagnostics and had lower
+# AIC values than the retained models. Remember that the retained models use a beta-binomial
+# family as the response displayed overdispersion without it. Models that did not account for this
+# overdispersion also raised other red flags. As recommended by Harrison (2014), we compared the
+# beta-binomial models with models including OLRE but the latter models also displayed some
+# problematic issues such as concerning multicollinearity, autocorrelation and quantile deviations.
+# Diagnostics from the beta-binomial models were all satisfactory if we excluded "species" from
+# the models as it is collinear with "clutch_size". We thus chose to keep "clutch_size" as
+# it is a more informative predictor and yielded better diagnostics. However, it should be noted
+# that there was a species effect as blue tits tended to have a lower fledging survival than
+# Parus major:
+ntits3 %>% dplyr::mutate(fledging_success = fledgling_nb/clutch_size) %>%
+  dplyr::group_by(species) %>%
+  dplyr::summarise(mean_fs = mean(fledging_success)) # Note that this mean fledging survival does
+# not account for the effect of the covariates unlike a coefficient estimate (you could
+# alternatively fit a model replacing "clutch_size" by "species" or using both, to estimate a
+# more accurate effect).
+# Finally, it also appears that for this response variable the use of mixed models was not truly
+# required. We kept the GLMM just in case, but the results are the same without random effects.
+## Significant variables: F-metric (++), clutch_size (-), manag_high (--), and laying_day (--).
+## For the interactive (moderated) model, the INTERACTION TERM was also significant (--) but the
+# F-metric was not anymore, which could be a sign of a cross-over interaction. Furthermore,
+# light_pollution (-) also turned out significant in the interactive model (with only a trend in
+# the additive one)!
+## Hypothesis 1 and 2 possibly validated (AIC = 1383.3 vs 1379.5)!
+
+
+###### EXPLORATORY MODELS ######
+###### EXPLORATORY MODELS ######
+###### EXPLORATORY MODELS ######
+# For the exploratory models:
+summary(ttFS_zibbin_glmm1h) # AIC = 1366.7 and both R2_glmm = 0.79.
+## Significant variables: F-metric (++), clutch_size (-), manag_high (--), laying_day (--), and year2022 (+++),
+# and also [urban_intensity (+), year2021 and year2022 (---) for the ZI component]!
+## Almost significant variables: [min_t_between (+) for the ZI component]!
+summary(ttFS_zibbin_glmm2h) # AIC = 1363.8 and both R2_glmm = 0.8.
+## Significant variables: clutch_size (-), manag_high (--), light_pollution (-), laying_day (--) and
+# year2022 (+++), and the INTERACTION EFFECT (--); and also [urban_intensity (+), year2021 and year2022 (---)
+# for the ZI component]!
+## Almost significant variables: the F-metric (+) and also [min_t_between (+) for the ZI component]!
+## Hypothesis 2 likely validated with a possible cross-over interaction!
+# Diagnostics for these models were mostly ok, there was no outliers, deviations, dispersion or
+# distributional problems.
+# Predictions were fairly ok but the models still made too narrow predictions and failed to correctly
+# predict total successes and failures.
+
+# I also tried removing "traffic" and it didn't change things much. When we used the "F-metric" along with
+# "urban_intensity" to model the ZI-part of the model, the effect of the "F-metric" utterly disappeared
+# suggesting that connectivity does not influence total fledging failures and its effect in "F models" was
+# actually a surrogate effect from "urban_intensity".
+
+## Since the interaction effects turned out significant, we have to explore them graphically to interpret them!
+
+
 
 
