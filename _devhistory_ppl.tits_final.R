@@ -221,7 +221,6 @@ file.create(... = "R/01_03_preparing_data.R")
 file.create(... = "R/02_00_graphab_analyses.R")
 file.create(... = "R/02_01_exploratory_data_analyses.R")
 file.create(... = "R/03_01_ntits_inference_modelling.R")
-file.create(... = "R/03_02_ntits_exploratory_modelling.R")
 
 
 
@@ -230,7 +229,7 @@ file.create(... = "R/03_02_ntits_exploratory_modelling.R")
 ##### * 1.5. Creating reports (RMarkdown) --------------------------------------
 # ---------------------------------------------------------------------------- #
 
-file.create(... = "output/texts/exploratory_data_analyses.Rmd") # Using this command,
+file.create(... = "output/texts/exploratory_modelling_report.Rmd") # Using this command,
 # a .Rmd file will be created but will lack the YAML header skeleton that should thus be manually
 # placed at the top of the document.
 

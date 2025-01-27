@@ -1,4 +1,74 @@
+# ---------------------------------------------------------------------------------- #
+#####                      Code for all exploratory modelling                    #####
+# ---------------------------------------------------------------------------------- #
 
+# The code of this R file is meant to wrap all exploratory modelling that were conducted after our
+# formal inferential modelling phase. These "exploratory models" were built in order to try and fine
+# tune some modelling components (e.g. zero-inflation) or to ascertain the robustness of our formal
+# results by using different proxies for our variables of interest.
+
+
+##### Rmd ?????? ----
+##### Rmd ?????? ----
+##### Rmd ?????? ----
+##### Rmd ?????? ----
+##### Rmd ?????? ----
+##### Rmd ?????? ----
+##### Rmd ?????? ----
+
+is related to additional
+# questions and perspectives that have, by nature, far less support as the data have
+# already been used for formal testing (so type-I error rates aren't properly controlled for anymore)!
+
+
+
+
+
+########################## *****************************************###############################
+# ----------------------- #
+##### 0. Preparation  #####
+# ----------------------- #
+
+library(magrittr) # The only library that I truly need to load (in order to be able to use pipes).
+.pardefault <- par()
+
+
+### Loading the data ___________________________________________________________
+ntits <- readr::read_csv2(here::here("output", "tables", "ndata_final.csv"), col_names = TRUE,
+                          col_types = readr::cols(id_nestbox = readr::col_factor(),
+                                                  id_patch = readr::col_factor(),
+                                                  site = readr::col_factor(),
+                                                  year = readr::col_factor(),
+                                                  species = readr::col_factor(),
+                                                  laying_date = readr::col_date(),
+                                                  flight_date = readr::col_date(),
+                                                  clutch_size = readr::col_integer(),
+                                                  brood_size = readr::col_integer(),
+                                                  fledgling_nb = readr::col_integer(),
+                                                  manag_intensity = readr::col_factor(
+                                                    ordered = TRUE,
+                                                    levels = c("0", "1", "2"),
+                                                    include_na = FALSE))) %>%
+  dplyr::mutate(dplyr::across(where(is.matrix), as.numeric),
+                dplyr::across(where(is.character), as.factor)) %>%
+  dplyr::mutate(year = stats::relevel(x = year, ref = 3), # Assign 2019 as the reference group.
+                species = stats::relevel(x = species, ref = 2)) %>% # Assign PM as the
+  # reference group.
+  dplyr::mutate(manag_low = ifelse(manag_intensity == "0", "1", "0"),
+                manag_mid = ifelse(manag_intensity == "1", "1", "0"),
+                manag_high = ifelse(manag_intensity == "2", "1", "0"))
+# NOTE: I have to load the "tits" final dataset exported by 'tfinal_EDAta()' in order to avoid
+# running the former function that is a bit long to run (but you can if you want).
+ntits %>% dplyr::mutate(dplyr::across(where(is.character), as.factor)) -> ntits
+
+
+
+
+
+########################## *****************************************###############################
+# -------------------------------- #
+##### 1. Modelling clutch size #####
+# -------------------------------- #
 
 
 
