@@ -221,6 +221,7 @@ file.create(... = "R/01_03_preparing_data.R")
 file.create(... = "R/02_00_graphab_analyses.R")
 file.create(... = "R/02_01_exploratory_data_analyses.R")
 file.create(... = "R/03_01_ntits_inference_modelling.R")
+file.create(... = "R/03_02_ntits_exploratory_modelling.R")
 
 
 
