@@ -50,6 +50,7 @@ ntits <- readr::read_csv2(here::here("output", "tables", "ndata_final.csv"), col
                 manag_high = ifelse(manag_intensity == "2", "1", "0"))
 # NOTE: I have to load the "tits" final dataset exported by 'tfinal_EDAta()' in order to avoid
 # running the former function that is a bit long to run (but you can if you want).
+ntits %>% dplyr::mutate(dplyr::across(where(is.character), as.factor)) -> ntits
 
 
 
@@ -74,14 +75,14 @@ ntits3 <- ntits[-c(111,156,170,181,210,227,326,362,374,379),] # The very first d
 
 ## Fitting a regular Poisson regression:
 ttCy_glm1 <- stats::glm(clutch_size ~ log_patch_area + log_F_metric_d2b1 + species +
-                          urban_intensity + manag_intensity +
+                          urban_intensity + manag_mid + manag_high +
                           light_pollution + noise_m + traffic +
                           cumdd_30 + laying_day + year,
                         data = ntits3, family = "poisson")
 
 ## Fitting a regular Poisson GLMM:
 ttCy_glmm1 <- glmmTMB::glmmTMB(clutch_size ~ log_patch_area + log_F_metric_d2b1 + species +
-                                 urban_intensity + manag_intensity +
+                                 urban_intensity + manag_mid + manag_high +
                                  light_pollution + noise_m + traffic +
                                  cumdd_30 + laying_day + year + (1|id_nestbox),
                                data = ntits3, family = "poisson")
@@ -89,7 +90,7 @@ ttCy_glmm1 <- glmmTMB::glmmTMB(clutch_size ~ log_patch_area + log_F_metric_d2b1 
 
 ## Fitting a regular Conway-Maxwell (COM) Poisson regression (GLM):
 ttCy_comglm1 <- glmmTMB::glmmTMB(clutch_size ~ log_patch_area + log_F_metric_d2b1 + species +
-                                   urban_intensity + manag_intensity +
+                                   urban_intensity + manag_mid + manag_high +
                                    light_pollution + noise_m + traffic +
                                    cumdd_30 + laying_day + year,
                                  data = ntits3, family = glmmTMB::compois(link = "log"),
@@ -97,14 +98,14 @@ ttCy_comglm1 <- glmmTMB::glmmTMB(clutch_size ~ log_patch_area + log_F_metric_d2b
 # # OR:
 # ttCy_comglm1b <- COMPoissonReg::glm.cmp(formula.lambda =
 #                                           clutch_size ~ log_patch_area + log_F_metric_d2b1 + species +
-#                                           urban_intensity + manag_intensity +
+#                                           urban_intensity + manag_mid + manag_high +
 #                                           light_pollution + noise_m + traffic +
 #                                           cumdd_30 + laying_day + year,
 #                                      data = ntits3, formula.nu = ~1) # Intercept only 'nu' (default).
 
 ## Fitting a regular Conway-Maxwell (COM) Poisson mixed model (GLMM):
 ttCy_comglmm1 <- glmmTMB::glmmTMB(clutch_size ~ log_patch_area + log_F_metric_d2b1 + species +
-                                    urban_intensity + manag_intensity +
+                                    urban_intensity + manag_mid + manag_high +
                                     light_pollution + noise_m + traffic +
                                     cumdd_30 + laying_day + year + (1|id_nestbox),
                                   data = ntits3, family = glmmTMB::compois(link = "log"),
@@ -113,7 +114,7 @@ ttCy_comglmm1 <- glmmTMB::glmmTMB(clutch_size ~ log_patch_area + log_F_metric_d2
 ## Fitting the interaction model (COM-Poisson GLMM):
 ttCy_comglmm2 <- glmmTMB::glmmTMB(clutch_size ~
                                     c.log_patch_area * c.log_F_metric_d2b1 + species +
-                                    urban_intensity + manag_intensity +
+                                    urban_intensity + manag_mid + manag_high +
                                     light_pollution + noise_m + traffic +
                                     cumdd_30 + laying_day + year + (1|id_nestbox),
                                   data = ntits3, family = glmmTMB::compois(link = "log"),
@@ -258,7 +259,7 @@ performance::r2_nakagawa(ttCy_comglmm1) # [Additive model]: Marg_R2_glmm = 0.1; 
 ## Likelihood-based evaluation of effects inclusion:
 # For the "site" random-effects (RE):
 ttCy_comglmm1ac <- glmmTMB::glmmTMB(clutch_size ~ log_patch_area + log_F_metric_d2b1 + species +
-                                      urban_intensity + manag_intensity +
+                                      urban_intensity + manag_mid + manag_high +
                                       light_pollution + noise_m + traffic +
                                       cumdd_30 + laying_day + year + (1|id_nestbox) + (1|site),
                                     data = ntits3, family = glmmTMB::compois(link = "log"),
@@ -464,7 +465,7 @@ ntits3$id_obs <- as.factor(1:nrow(ntits3)) # To create an observation-level RE (
 # ## Fitting a regular binomial (BIN) GLM:
 # ttFS_bin_glm1 <- stats::glm(fledgling_nb/brood_size ~ log_patch_area + log_F_metric_d2b1 +
 #                            clutch_size +
-#                            urban_intensity + manag_intensity +
+#                            urban_intensity + manag_mid + manag_high +
 #                            light_pollution + noise_m + traffic +
 #                            min_t_between + laying_day + year,
 #                          weights = brood_size, # Prior weights!
@@ -474,7 +475,7 @@ ntits3$id_obs <- as.factor(1:nrow(ntits3)) # To create an observation-level RE (
 # ## Fitting a beta-binomial (BBIN) GLM:
 # ttFS_bbin_glm1 <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_patch_area + log_F_metric_d2b1 +
 #                                clutch_size +
-#                                urban_intensity + manag_intensity +
+#                                urban_intensity + manag_mid + manag_high +
 #                                light_pollution + noise_m + traffic +
 #                                min_t_between + laying_day + year,
 #                              weights = brood_size, # Prior weights!
@@ -485,7 +486,7 @@ ntits3$id_obs <- as.factor(1:nrow(ntits3)) # To create an observation-level RE (
 # ## Fitting a binomial (BIN) GLMM:
 # ttFS_bin_glmm1 <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_patch_area + log_F_metric_d2b1 +
 #                                   clutch_size +
-#                                   urban_intensity + manag_intensity +
+#                                   urban_intensity + manag_mid + manag_high +
 #                                   light_pollution + noise_m + traffic +
 #                                   min_t_between + laying_day + year + (1|id_nestbox),
 #                                 weights = brood_size, data = ntits3,
@@ -494,7 +495,7 @@ ntits3$id_obs <- as.factor(1:nrow(ntits3)) # To create an observation-level RE (
 # ## Fitting a beta-binomial (BBIN) GLMM:
 # ttFS_bbin_glmm1 <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_patch_area + log_F_metric_d2b1 +
 #                                clutch_size +
-#                                urban_intensity + manag_intensity +
+#                                urban_intensity + manag_mid + manag_high +
 #                                light_pollution + noise_m + traffic +
 #                                min_t_between + laying_day + year + (1|id_nestbox),
 #                              weights = brood_size, # Prior weights!
@@ -504,7 +505,7 @@ ntits3$id_obs <- as.factor(1:nrow(ntits3)) # To create an observation-level RE (
 # ## Fitting a binomial (BIN) GLMM with an OLRE:
 # ttFS_bin_glmm1_olre <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_patch_area +
 #                                           log_F_metric_d2b1 + clutch_size +
-#                                   urban_intensity + manag_intensity +
+#                                   urban_intensity + manag_mid + manag_high +
 #                                   light_pollution + noise_m + traffic +
 #                                   min_t_between + laying_day + year + (1|id_obs) + (1|id_nestbox),
 #                                 weights = brood_size, data = ntits3,
@@ -523,7 +524,7 @@ ntits3$id_obs <- as.factor(1:nrow(ntits3)) # To create an observation-level RE (
 # ## Fitting a zero-inflated binomial (ZIBIN) GLMM:
 # ttFS_zibin_glmm1 <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_patch_area+
 #                                        log_F_metric_d2b1 + clutch_size +
-#                                     urban_intensity + manag_intensity +
+#                                     urban_intensity + manag_mid + manag_high +
 #                                     light_pollution + noise_m + traffic +
 #                                     min_t_between + laying_day + year + (1|id_nestbox),
 #                                   weights = brood_size, data = ntits3,
@@ -533,7 +534,7 @@ ntits3$id_obs <- as.factor(1:nrow(ntits3)) # To create an observation-level RE (
 # # Fitting a ZIBIN GLMM with OLRE:
 # ttFS_zibin_glmm1_olre <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_patch_area +
 #                                             log_F_metric_d2b1 + clutch_size +
-#                                     urban_intensity + manag_intensity +
+#                                     urban_intensity + manag_mid + manag_high +
 #                                     light_pollution + noise_m + traffic +
 #                                     min_t_between + laying_day + year + (1|id_obs)+(1|id_nestbox),
 #                                   weights = brood_size, data = ntits3,
@@ -543,7 +544,7 @@ ntits3$id_obs <- as.factor(1:nrow(ntits3)) # To create an observation-level RE (
 ## Fitting a zero-inflated beta-binomial (ZIBBIN) GLM:
 ttFS_zibbin_glm1 <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_patch_area +
                                        log_F_metric_d2b1 + clutch_size +
-                                    urban_intensity + manag_intensity +
+                                    urban_intensity + manag_mid + manag_high +
                                     light_pollution + noise_m + traffic +
                                     min_t_between + laying_day + year,
                                   weights = brood_size, data = ntits3,
@@ -553,7 +554,7 @@ ttFS_zibbin_glm1 <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_patch_area +
 ## Fitting a ZIBBIN GLMM:
 ttFS_zibbin_glmm1 <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_patch_area + log_F_metric_d2b1 +
                                         clutch_size +
-                                        urban_intensity + manag_intensity +
+                                        urban_intensity + manag_mid + manag_high +
                                         light_pollution + noise_m + traffic +
                                         min_t_between + laying_day + year + (1|id_nestbox),
                                       weights = brood_size, data = ntits3,
@@ -574,7 +575,7 @@ summary(ttFS_zibbin_glmm1) # AIC = 1379.5 (compared to 1476.3 without ZI), so th
 # ttFS_zibin_glmm2 <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~
 #                                        c.log_patch_area * c.log_F_metric_d2b1 +
 #                                        clutch_size +
-#                                        urban_intensity + manag_intensity +
+#                                        urban_intensity + manag_mid + manag_high +
 #                                        light_pollution + noise_m + traffic +
 #                                        min_t_between + laying_day + year + (1|id_nestbox),
 #                                   weights = brood_size, data = ntits3,
@@ -585,7 +586,7 @@ summary(ttFS_zibbin_glmm1) # AIC = 1379.5 (compared to 1476.3 without ZI), so th
 # ttFS_zibin_glmm2_olre <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~
 #                                             c.log_patch_area * c.log_F_metric_d2b1 +
 #                                             clutch_size +
-#                                             urban_intensity + manag_intensity +
+#                                             urban_intensity + manag_mid + manag_high +
 #                                             light_pollution + noise_m + traffic +
 #                                             min_t_between + laying_day + year + (1|id_obs) +
 #                                             (1|id_nestbox),
@@ -597,7 +598,7 @@ summary(ttFS_zibbin_glmm1) # AIC = 1379.5 (compared to 1476.3 without ZI), so th
 ttFS_zibbin_glm2 <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~
                                        c.log_patch_area * c.log_F_metric_d2b1 +
                                        clutch_size +
-                                       urban_intensity + manag_intensity +
+                                       urban_intensity + manag_mid + manag_high +
                                        light_pollution + noise_m + traffic +
                                        min_t_between + laying_day + year,
                                   weights = brood_size, data = ntits3,
@@ -608,7 +609,7 @@ ttFS_zibbin_glm2 <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~
 ttFS_zibbin_glmm2 <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~
                                         c.log_patch_area * c.log_F_metric_d2b1 +
                                         clutch_size +
-                                        urban_intensity + manag_intensity +
+                                        urban_intensity + manag_mid + manag_high +
                                         light_pollution + noise_m + traffic +
                                         min_t_between + laying_day + year + (1|id_nestbox),
                                       weights = brood_size, data = ntits3,
@@ -793,7 +794,7 @@ performance::r2_nakagawa(ttFS_zibbin_glmm2, tolerance = 0.0000000000001)
 ## Likelihood-based evaluation of effects inclusion:
 zzz <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_patch_area + log_F_metric_d2b1 +
                                         clutch_size +
-                                        urban_intensity + manag_intensity +
+                                        urban_intensity + manag_mid + manag_high +
                                         light_pollution + noise_m + traffic +
                                         min_t_between + laying_day + year + (1|site),
                                       weights = brood_size, data = ntits3,
@@ -801,7 +802,7 @@ zzz <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_patch_area + log_F_metric_
                                       ziformula = ~1) # Intercept only.
 zzz2 <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_patch_area + log_F_metric_d2b1 +
                                         clutch_size +
-                                        urban_intensity + manag_intensity +
+                                        urban_intensity + manag_mid + manag_high +
                                         light_pollution + noise_m + traffic +
                                         min_t_between + laying_day + year +
                            (1|id_nestbox) + (1|site),
@@ -888,8 +889,7 @@ base_data |>
   forestplot::fp_set_zebra_style("#EFEFEF")
 
 
-## Plotting and exploring the interaction effect:
-# Creating a 2D interaction plot:
+## Creating a 2D plot for the interaction effect (with PATCH_AREA as X):
 sjPlot::plot_model(ttFS_zibbin_glmm2, type = "pred",
                    terms = c("c.log_patch_area [all]",
                              "c.log_F_metric_d2b1 [-1.82, -0.3, 0, 0.32, 1.12]"),
@@ -899,7 +899,7 @@ sjPlot::plot_model(ttFS_zibbin_glmm2, type = "pred",
                    bias_correction = TRUE,
                    title = "", # If I don't let it blank (and delete it), it sets a title by default.
                    axis.title = c("Local patch area",
-                                  "Predicted fledging survival"),
+                                  "Predicted fledging survival rate"),
                    legend.title = "Flux metric",
                    colors = c("darkred", "white", "darkorange", "darkolivegreen3",
                               "chartreuse4"), # For a reason I don't understand, the 2nd colour in
@@ -908,12 +908,31 @@ sjPlot::plot_model(ttFS_zibbin_glmm2, type = "pred",
                    line.size = 1)
 
 
+## Creating a 2D plot for the interaction effect (with F-METRIC as X):
+sjPlot::plot_model(ttFS_zibbin_glmm2, type = "pred",
+                   terms = c("c.log_F_metric_d2b1 [all]",
+                             "c.log_patch_area [-2.26, -0.62, 0, 0.56, 1.18]"),
+                   mdrt.values = "quart", # Only useful if `type = "int"` is used (i.e. automatic
+                   # plotting of interaction effects). If used, only plots the 3 quartile values
+                   # for the moderator.
+                   bias_correction = TRUE,
+                   title = "", # If I don't let it blank (and delete it), it sets a title by default.
+                   axis.title = c("Connectivity (F-metric)",
+                                  "Predicted fledging survival rate"),
+                   legend.title = "Patch area",
+                   colors = c("darkred", "white", "darkorange", "darkolivegreen3",
+                              "chartreuse4"), # For a reason I don't understand, the 2nd colour in
+                   # the vector is not taken into account!
+                   show.data = TRUE, # Not available, I don't know why.
+                   line.size = 1)
+
 
 ## Creating a 3D interaction plot:
 x_tilde <- expand.grid(c.log_patch_area = seq(-2.26,1.184, length.out=15),
-                       c.log_F_metric_d2b1 = seq(-1.822,1.125, length.out=15), # Computes every combination
-                       # for the input variables (here a sequence of 15 values roughly ranging the actual
-                       # values of the two predictors involved in the modelled interaction).
+                       c.log_F_metric_d2b1 = seq(-1.822,1.125, length.out=15), # Computes every
+                       # combination for the input variables (here a sequence of 15 values roughly
+                       # ranging the actual values of the two predictors involved in the modeled
+                       # interaction).
                        clutch_size = 9,
                        urban_intensity = 0,
                        manag_intensity = "0",
@@ -924,8 +943,8 @@ x_tilde <- expand.grid(c.log_patch_area = seq(-2.26,1.184, length.out=15),
                        laying_day = 9.3,
                        year = "2019",
                        brood_size = 8,
-                       id_nestbox = "DIJ-071") # Here, I used approximately median values for all the other predictors
-# or for selected factors (e.g. DIJ-071 is for a nestbox in the old city).
+                       id_nestbox = "DIJ-071") # Here, I used approximately median values for all
+# the other predictors or for selected factors (e.g. DIJ-071 is for a nestbox in the old city).
 x_tilde$fledging_rate <- predict(ttFS_zibbin_glmm2, x_tilde, type="response")
 
 lattice::trellis.par.set("axis.line", list(col=NA,lty=1,lwd=1))
@@ -933,7 +952,7 @@ lattice::wireframe(fledging_rate ~ c.log_patch_area + c.log_F_metric_d2b1, data=
                    main = "Predicted fledging rate",
                    drape = TRUE,
                    colorkey = TRUE,
-                   zlab = list("Fledging rate", cex=1.3, rot=90),
+                   zlab = list("Fledging survival rate", cex=1.3, rot=90),
                    xlab = list("Patch area", cex=1.3, rot=-40),
                    ylab = list("F-metric", cex=1.3, rot=17),
                    scales = list(arrows=FALSE, cex=1, tick.number = 10,
@@ -943,15 +962,6 @@ lattice::wireframe(fledging_rate ~ c.log_patch_area + c.log_F_metric_d2b1, data=
                    col.regions = rainbow(100, s = 1, v = 1, start = 0, end = max(1,100 - 1)/100,
                                          alpha = .5), # Controls the transparency.
                    screen = list(z = -60, x = -75)) # Z controls the rotation.
-
-
-
-
-
-
-
-
-# ***
 
 
 
@@ -995,27 +1005,303 @@ ntits3 %>% dplyr::mutate(fledging_success = fledgling_nb/clutch_size) %>%
 ###### EXPLORATORY MODELS ######
 # For the exploratory models:
 summary(ttFS_zibbin_glmm1h) # AIC = 1366.7 and both R2_glmm = 0.79.
-## Significant variables: F-metric (++), clutch_size (-), manag_high (--), laying_day (--), and year2022 (+++),
-# and also [urban_intensity (+), year2021 and year2022 (---) for the ZI component]!
+## Significant variables: F-metric (++), clutch_size (-), manag_high (--), laying_day (--), and
+# year2022 (+++), and also [urban_intensity (+), year2021 and year2022 (---) for the ZI component]!
 ## Almost significant variables: [min_t_between (+) for the ZI component]!
 summary(ttFS_zibbin_glmm2h) # AIC = 1363.8 and both R2_glmm = 0.8.
-## Significant variables: clutch_size (-), manag_high (--), light_pollution (-), laying_day (--) and
-# year2022 (+++), and the INTERACTION EFFECT (--); and also [urban_intensity (+), year2021 and year2022 (---)
-# for the ZI component]!
+## Significant variables: clutch_size (-), manag_high (--), light_pollution (-), laying_day (--)
+# and year2022 (+++), and the INTERACTION EFFECT (--); and also [urban_intensity (+), year2021
+# and year2022 (---) for the ZI component]!
 ## Almost significant variables: the F-metric (+) and also [min_t_between (+) for the ZI component]!
 ## Hypothesis 2 likely validated with a possible cross-over interaction!
 # Diagnostics for these models were mostly ok, there was no outliers, deviations, dispersion or
 # distributional problems.
-# Predictions were fairly ok but the models still made too narrow predictions and failed to correctly
-# predict total successes and failures.
+# Predictions were fairly ok but the models still made too narrow predictions and failed to
+# correctly predict total successes and failures.
 
-# I also tried removing "traffic" and it didn't change things much. When we used the "F-metric" along with
-# "urban_intensity" to model the ZI-part of the model, the effect of the "F-metric" utterly disappeared
-# suggesting that connectivity does not influence total fledging failures and its effect in "F models" was
-# actually a surrogate effect from "urban_intensity".
+# I also tried removing "traffic" and it didn't change things much. When we used the "F-metric"
+# along with "urban_intensity" to model the ZI-part of the model, the effect of the "F-metric"
+# utterly disappeared suggesting that connectivity does not influence total fledging failures and
+# its effect in "F models" was actually a surrogate effect from "urban_intensity".
 
-## Since the interaction effects turned out significant, we have to explore them graphically to interpret them!
+## Since the interaction effects turned out significant, we have to explore them graphically to
+# interpret them!
 
 
 
+
+
+
+########################## *****************************************###############################
+# ------------------------------------------------ #
+##### 3. Modelling the mass of tits fledglings #####
+# ------------------------------------------------ #
+
+##### * 3.1 Mass: LMM ---------------------------------------------------------
+# ---------------------------------------------------------------------------- #
+### ** 3.1.1. Initial model fit ----
+# __________________________________
+
+ntits %>% dplyr::filter(is.na(mass) == FALSE) -> ntits3 # Only 317 observations left.
+
+## Fitting a regular linear model:
+ttMA_lm1 <- glmmTMB::glmmTMB(mass ~ log_patch_area + log_F_metric_d2b1 + species + clutch_size +
+                               urban_intensity + manag_mid + manag_high +
+                               light_pollution + noise_m + traffic +
+                               min_t_between + laying_day + year,
+                             data = ntits3, family = "gaussian")
+
+## Fitting an additive LMM:
+ttMA_lmm1 <- glmmTMB::glmmTMB(mass ~ log_patch_area + log_F_metric_d2b1 + species + clutch_size +
+                                urban_intensity + manag_mid + manag_high +
+                                light_pollution + noise_m + traffic +
+                                min_t_between + laying_day + year + (1|id_nestbox),
+                              data = ntits3, family = "gaussian")
+ttMA_lmm1b <- lme4::lmer(mass ~ log_patch_area + log_F_metric_d2b1 + species + clutch_size +
+                           urban_intensity + manag_mid + manag_high +
+                           light_pollution + noise_m + traffic +
+                           min_t_between + laying_day + year + (1|id_nestbox), data = ntits3,
+                         control=lme4::lmerControl(optimizer="bobyqa",
+                                                   optCtrl=list(maxfun=2e5))) # Same model but
+# fitted with {lme4} for comparison sake! Note however, that it is fitted by REML and, if not,
+# it is singular!
+
+
+## Fitting interactive (mediated) LMMs:
+ttMA_lmm2 <- glmmTMB::glmmTMB(mass ~ c.log_patch_area * c.log_F_metric_d2b1 + species +
+                                clutch_size + urban_intensity + manag_mid + manag_high +
+                                light_pollution + noise_m + traffic +
+                                min_t_between + laying_day + year + (1|id_nestbox),
+                              data = ntits3, family = "gaussian")
+ttMA_lmm2b <- lme4::lmer(mass ~ c.log_patch_area * c.log_F_metric_d2b1 + species + clutch_size +
+                           urban_intensity + manag_mid + manag_high +
+                           light_pollution + noise_m + traffic +
+                           min_t_between + laying_day + year + (1|id_nestbox), data = ntits3,
+                         control=lme4::lmerControl(optimizer="bobyqa",
+                                                   optCtrl=list(maxfun=2e5)))
+AIC(ttMA_lm1) # AIC = 1141.3.
+summary(ttMA_lmm1) # AIC = 1143.3.
+summary(ttMA_lmm1b) # REML = 1146.2 (not a true AIC).
+summary(ttMA_lmm2) # AIC = 1144.7, does not seem supported by the data!
+summary(ttMA_lmm2b) # REML = 1147, does not seem supported by the data!
+# Note that for both LMM, RE variance is extremely low (nearly singular fit) which, with the AIC,
+# suggests that the use of a mixed-model is not warranted by the data.
+
+
+
+
+
+
+### ** 3.1.2. Diagnostics and assumption checks ----
+# __________________________________________________
+
+### *** 3.1.2.1. Residuals extraction, autocorrelation and collinearity ----
+## Extracting residuals (with the {redres} package):
+raw_cond <- redres::compute_redres(ttMA_lmm1b) # Computes the raw conditional residuals
+# (conditional on the random effects (RE)).
+pearson_mar <- redres::compute_redres(ttMA_lmm1b, type = "pearson_mar") # Computes the Pearson
+# marginal (not accounting for the RE) residuals.
+std_cond <- redres::compute_redres(ttMA_lmm1b, type = "std_cond") # Computes the studentised
+# conditional ones.
+# Joins the residuals to the data:
+xxx <- cbind(ntits3, raw_cond, pearson_mar, std_cond)
+
+## Simulation-based scaled residuals computation (DHARMa method):
+simu.resid <- DHARMa::simulateResiduals(fittedModel = ttMA_lmm1b, n = 1000, plot = FALSE)
+plot(simu.resid) # One outlier detected!
+DHARMa::outliers(simu.resid) # Obs. number 192.
+
+## Autocorrelation and collinearity:
+DHARMa::testSpatialAutocorrelation(simulationOutput = simu.resid,
+                                   x = ntits3$coord_x, y = ntits3$coord_y, plot = TRUE) # Ok.
+performance::check_autocorrelation(ttMA_lmm1b) # Ok.
+performance::check_collinearity(ttMA_lmm1b) # Ok-ish but some VIF > 4-5 and moderate correlation
+# for "species" in the interaction model (possibly linked to clutch size?), but as the latter
+# seems invalidated by the data, it can be disregarded.
+stats::vcov(ttMA_lmm1b) # Ok.
+
+
+
+### *** 3.1.2.2. Distribution and homoscedasticity ----
+## Assessing the normality of the residuals:
+stats::shapiro.test(xxx$raw_cond) # Ok. But plotting would be better:
+redres::plot_resqq(ttMA_lmm1b) # As expected, the plot shows a substantial departure from
+# normality at the extreme ends of the quantiles, that is at the border of the parameters space.
+# Overall, as almost all points stay within the 95% CI, it's quite ok.
+# Plotting them against each numeric predictor:
+xxx %>%
+  tidyr::gather(key = "type", value = "residual",
+                c(log_patch_area, log_F_metric_d2b1, clutch_size, urban_intensity,
+                  light_pollution, noise_m, traffic, min_t_between, laying_day)) %>%
+  ggplot2::ggplot(ggplot2::aes(x = residual)) +
+  ggplot2::geom_histogram(bins = 20) +
+  ggplot2::facet_grid(. ~ type, scales = "free") +
+  ggplot2::theme_bw() # Residuals vs predictor plots look rather ok, even though some strange
+# patterns exist that reflect the distribution of the predictors.
+
+## Assessing the normality in the random effect:
+redres::plot_ranef(ttMA_lmm1b) # Ok-ish, but quite a strong departure from normality for the last
+# residual.
+
+## Assessing homogeneity of variance and influential observations:
+plot(ttMA_lmm1b, type=c("p","smooth"), col.line = 2, id = 0.05, idLabels = ~.obs,
+     ylab = "Pearson's residuals", xlab = "Fitted values") # It's ok but there are a few possible
+# outliers:
+ntits3[c(112,102,32,194,155),] # High residuals ~= heavy PM fledglings. Ok.
+ntits3[c(173,26,264,296,198,152,170,192),] # Low residuals ~= light PM fledglings. Ok.
+
+# Residuals vs leverage:
+par(.pardefault)
+plot(ttMA_lmm1b, stats::rstudent(.) ~ stats::hatvalues(.))
+cd <- stats::cooks.distance(ttMA_lmm1b)
+plot(cd, ylab = "Cook's distance")
+ntits3[which(cd>0.4),] # Ok, all observations are < 0.5, so no overly influential points.
+ntits3[which(cd>0.1),] # Even with very conservative values, it's ok!
+
+## Residuals vs predictors:
+redres::plot_redres(ttMA_lmm1b, xvar = "min_t_between") +
+  ggplot2::geom_smooth(method = "loess") +
+  ggplot2::theme_classic() +
+  ggplot2::labs(title = "Residual vs predictor") # Ok-ish.
+# plot(ntits3$log_F_metric_d2b1, stats::residuals(ttMA_lmm1b)) # Same plot (I should create a
+# custom function).
+redres::plot_redres(ttMA_lmm1b, type = "raw_mar", xvar = "year") # Ok.
+
+## Distribution of the predicted values:
+par(.pardefault)
+predictions <- stats::predict(object = ttMA_lmm1b, type = "response") # Predicted values extraction.
+par(mfrow= c(1,2))
+hist(predictions, main = "Predicted mass", xlab = "Nestling mass (g)")
+plot(ecdf(predictions), main = "Predicted CDF", xlab = "Nestling mass (g)")
+fitdistrplus::plotdist(data = ntits3$mass, histo = TRUE, demp = TRUE) # Rather ok.
+
+
+
+### *** 3.1.2.3. Linearity ----
+## Plotting the response on the logit scale (= log odds) against predictors:
+# Format data:
+ntits3 %>% dplyr::select(log_patch_area, log_patch_perim, log_woody_vw, log_woody_area,
+                         log_F_metric_d1b0, log_F_metric_d2b0, log_F_metric_d3b0, log_F_metric_d1b1,
+                         log_F_metric_d2b1,
+                         Rr_metric_d1c1, Rr_metric_d2c1, Rr_metric_d3c1, Dr_metric_c1, Dr_metric_c2,
+                         clutch_size, brood_size,
+                         urban_intensity, log_herb_area, built_area, sqrt_built_vol, traffic,
+                         light_pollution, noise_m,
+                         cumdd_between, min_t_between) -> mydata
+predictors <- colnames(mydata)
+# Bind 'mass' and tidying the data for plot (ggplot2, so long format):
+mydata <- mydata %>%
+  dplyr::mutate(mass = ntits3$mass) %>%
+  tidyr::gather(key = "predictors", value = "predictor.value", -mass)
+# Create scatterplot
+ggplot2::ggplot(mydata, ggplot2::aes(y = mass, x = predictor.value))+
+  ggplot2::geom_point(size = 0.5, alpha = 0.5) +
+  ggplot2::geom_smooth(method = "loess") +
+  ggplot2::theme_bw() +
+  ggplot2::facet_wrap(~predictors, scales = "free_x") # Ok.
+
+
+
+### *** 3.1.2.4. Goodness-of-fit (GOF) and performances ----
+## Computing a pseudo-R2:
+performance::r2_nakagawa(ttMA_lmm1) # [Additive model]: Marg_R2_lmm = 0.81; Cond_R2_lmm = 0.81.
+performance::r2_nakagawa(ttMA_lmm2) # [Interact. model]: Marg_R2_lmm = 0.81; Cond_R2_lmm = 0.81.
+
+## Likelihood-based evaluation of effects inclusion:
+# Importance of the "id_nestbox" random-effect (RE):
+tictoc::tic("Parametric bootstrap LRT for RE inclusion")
+res.LRT_re <- DHARMa::simulateLRT(m0 = ttMA_lm1, m1 = ttMA_lmm1, n = 1000, seed = 547)
+tictoc::toc() # Took ~5 min to run.
+# The LRT is not significant, suggesting that M1 does NOT describe the data better than M0,
+# thus invalidating the importance of the random effect! Yet, as usual, we will keep using the
+# GLMM just in case.
+
+# Importance of the fixed effects (only using the LM):
+ttMA_lm0 <- glmmTMB::glmmTMB(mass ~ 1, data = ntits3, family = "gaussian")
+res.LRT_null <- stats::anova(object = ttMA_lm0, ttMA_lm1, test = "LRT")
+# The test is highly significant, confirming that the model is useful to explain the data.
+
+
+
+
+
+### ** 3.1.3. Inference and predictions ----
+# __________________________________________
+
+### *** 3.1.3.1. Hypotheses testing: LRT for the additive and interactive effect of the F-metric ----
+## For the additive effect of the connectivity metric:
+ttMA_lmm0b <- stats::update(ttMA_lmm1b, .~. -log_F_metric_d2b1)
+
+res.LRT_addeff <- pbkrtest::PBmodcomp(ttMA_lmm1b,
+                                      ttMA_lmm0b, nsim = 1000, seed = 182) # Took ~41s to run!
+readr::write_csv2(x = res.LRT_addeff$test, file = here::here("output", "tables",
+                                                             "res.ttMA_LRT_addeff.csv"))
+# The LRT is significant, indicating that our connectivity metric does improve the description
+# of the data.
+
+
+## For the interaction effect:
+res.LRT_inteff <- pbkrtest::PBmodcomp(ttMA_lmm2b,
+                                      ttMA_lmm1b, nsim = 1000, seed = 279) # Took ~46s to run!
+readr::write_csv2(x = res.LRT_inteff$test, file = here::here("output", "tables",
+                                                             "res.ttMA_LRT_inteff.csv"))
+# The LRT is NOT significant, indicating that our hypothesis of an interaction effect is not
+# supported by the data. Note however that there was a lot of extreme samples.
+
+
+
+### *** 3.1.3.2. Confidence intervals for estimated parameters ----
+tictoc::tic("CI for additive LMM parameters")
+res.ttMA_addeff_CI_boot <- confint(ttMA_lmm1b)
+tt <- as.data.frame(res.ttMA_addeff_CI_boot)
+tt$parameters <- rownames(tt)
+readr::write_csv2(x = tt,
+                  file = here::here("output", "tables", "res.ttMA_CI_addeff.csv"))
+tictoc::toc() # DISCLAIMER: took ~11s to run!
+
+
+
+
+
+### *** 3.1.3.3. Plotting results ----
+base_data <- tibble::tibble(
+  parameters = c("Intercept", "Local patch area", "Flux metric", "Species (Cyanistes caeruleus)", "Clutch size",
+                 "Urban intensity", "Management intensity (moderate)", "Management intensity (intensive)",
+                 "Light pollution", "Noise pollution", "Traffic", "Temperature", "Laying day", "Year (2020)",
+                 "Year (2021)", "Year (2022)"),
+  mean = c(ttMA_lmm1b@beta),
+  lower = c(tt[3:18,1]),
+  upper = c(tt[3:18,2]))
+
+base_data |>
+  forestplot::forestplot(labeltext = parameters,
+                         clip = c(-1,2),
+                         boxsize = 0.2) |>
+  forestplot::fp_set_style(box = "royalblue",
+                           line = "darkblue",
+                           summary = "royalblue") |>
+  forestplot::fp_add_header(parameters = "Variables") |>
+  forestplot::fp_set_zebra_style("#EFEFEF")
+
+
+
+
+
+### *** 3.1.3.4. Conclusion ----
+# For the initial model:
+summary(ttMA_lmm1b) # AIC = 1147.3 and both R2_lmm = 0.81.
+summary(ttMA_lmm2b) # AIC = 1148.1 and both R2_lmm = 0.81.
+# Diagnostics ran for 'ttMA_lmm1b' and 'ttMA_lmm2b' indicated that the models do fit the data
+# relatively well and that there are no major cause for concern:
+# - All sorts of residuals are globally fine. Even though some patterns exist that are linked to the
+#   imperfect sampling of the predictor space. There's not much we could do about it except, perhaps, try
+#   some more advanced variable transformations.
+# - Assumptions all seem validated, although there is a mild multicollinearity with some VIF > 4-5
+#   and moderate correlation for "species" in the interactive model. However, as this model quite
+#   largly rejects our working hypothesis, we will reject the model altogether.
+# - No overly influential observations although some potential outliers may exist: brood 192.
+## Significant variables: F-metric (++), speciesCC (---), clutch_size (-), high_manag (-),
+#  laying_day (-), year2020 (++) and 2022 (++).
+## Hypothesis 1 is validated (PB-based LRT = 5.833, df=1, p = 0.011) but hypothesis 2 is rejected
+#  (PB-based LRT = 0.653, df=1, p = 0.52)!
 
