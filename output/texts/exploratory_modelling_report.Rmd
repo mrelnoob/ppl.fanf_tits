@@ -61,14 +61,155 @@ All codes and packages (through a {renv} project) used in this study can further
 \
 \
 
-## 1.2. What is this document about?
+## 1.2. What is this document about and how it it organised?
 
 This report is meant to present all *exploratory modelling* that were conducted after our formal inferential modelling phase (cf. code and manuscript). These "exploratory models" were built in order to try and fine **tune some modelling components** (e.g. zero-inflation) or to **ascertain the robustness of our formal results** by using different proxies of our variables of interest: i.e. the *local patch area* and the *connectivity metric* (F metric: *log_F_metric_d2b1* in the R code).  
 By nature, these models have far less support than the models used fro inference as the data have already been used for formal testing (thus type-I error rates aren't properly controlled for anymore)!
+
+This report will be organised as follow:
+1. We will first present all results from the variant models for **clutch size**.
+2. Then we'll do the same for **nestling survival** and **mass**.
+3. To finally present the results from **nestling survival** models for which we tuned the *zero-inflation* (ZI) component to see if we could explain some of the excess of zeroes (that is total brood failures = 100% mortality rates).  
+To keep things short, please note that we will not present models diagnostics (they were mostly good and they can easily be reproduced from our code) nor all possible combinations of models as we did not explored them all (we mostly focused on a few proxies).
 \
 \
 
 ******
 
-# 2. 
+# 2. Models to explain tits clutch size
 
+
+
+
+
+# XXX. Tuning the ZI component...
+
+```{r TO BE DELETED}
+## Tuning the ZI part of the model:
+ttFS_zibbin_glm1e <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_patch_area + log_F_metric_d2b1 +
+                                        clutch_size +
+                                        urban_intensity + manag_intensity +
+                                        light_pollution + noise_m + traffic +
+                                        min_t_between + laying_day + year,
+                                      weights = brood_size, data = ntits3,
+                                      family = glmmTMB::betabinomial(link = "logit"),
+                                      ziformula = ~min_t_between) # Intercept only.
+
+ttFS_zibbin_glm1f <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_patch_area + log_F_metric_d2b1 +
+                                        clutch_size +
+                                        urban_intensity + manag_intensity +
+                                        light_pollution + noise_m + traffic +
+                                        min_t_between + laying_day + year,
+                                      weights = brood_size, data = ntits3,
+                                      family = glmmTMB::betabinomial(link = "logit"),
+                                      ziformula = ~log_F_metric_d2b1) # Intercept only.
+
+ttFS_zibbin_glm1g <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_patch_area + log_F_metric_d2b1 +
+                                        clutch_size +
+                                        urban_intensity + manag_intensity +
+                                        light_pollution + noise_m + traffic +
+                                        min_t_between + laying_day + year,
+                                      weights = brood_size, data = ntits3,
+                                      family = glmmTMB::betabinomial(link = "logit"),
+                                      ziformula = ~log_patch_area) # Intercept only.
+
+ttFS_zibbin_glm1h <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_patch_area + log_F_metric_d2b1 +
+                                        clutch_size +
+                                        urban_intensity + manag_intensity +
+                                        light_pollution + noise_m + traffic +
+                                        min_t_between + laying_day + year,
+                                      weights = brood_size, data = ntits3,
+                                      family = glmmTMB::betabinomial(link = "logit"),
+                                      ziformula = ~min_t_between+urban_intensity+year) # Intercept only.
+
+ttFS_zibbin_glmm1h <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_patch_area + log_F_metric_d2b1 +
+                                        clutch_size +
+                                        urban_intensity + manag_intensity +
+                                        light_pollution + noise_m + traffic +
+                                        min_t_between + laying_day + year + (1|id_nestbox),
+                                      weights = brood_size, data = ntits3,
+                                      family = glmmTMB::betabinomial(link = "logit"),
+                                      ziformula = ~min_t_between+urban_intensity+year) # Intercept only.
+
+ttFS_zibbin_glm1i <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_patch_area + log_F_metric_d2b1 +
+                                        clutch_size +
+                                        urban_intensity + manag_intensity +
+                                        light_pollution + noise_m + traffic +
+                                        min_t_between + laying_day + year,
+                                      weights = brood_size, data = ntits3,
+                                      family = glmmTMB::betabinomial(link = "logit"),
+                                      ziformula = ~laying_day+urban_intensity+year) # Intercept only.
+summary(ttFS_zibbin_glm1e) # AIC = 1374.5 vs 1377.5.
+summary(ttFS_zibbin_glm1f) # AIC = 1375.2.
+summary(ttFS_zibbin_glm1g) # AIC = 1376.8.
+summary(ttFS_zibbin_glm1h) # AIC = 1364.7.
+summary(ttFS_zibbin_glmm1h) # AIC = 1366.7 (mind the RE's uselessness).
+summary(ttFS_zibbin_glm1i) # AIC = 1367.
+# I also tried removing "traffic" and it doesn't change things much. When we use the "F-metric" along with
+# "urban_intensity" to model the ZI-part of the model, the effect of the "F-metric" utterly disappear
+# suggesting that connectivity does not influence total fledging failures and its effect in "F models"
+# is actually a surrogate effect from "urban_intensity". So I'll only diagnose the "H models".
+# Similarly, the surprising effects of the temperature proxies might actually be linked to humidity, a
+# variable we could not measure.
+
+ttFS_zibbin_glm2h <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ c.log_patch_area * c.log_F_metric_d2b1 +
+                                        clutch_size +
+                                        urban_intensity + manag_intensity +
+                                        light_pollution + noise_m + traffic +
+                                        min_t_between + laying_day + year,
+                                     weights = brood_size, data = ntits3,
+                                     family = glmmTMB::betabinomial(link = "logit"),
+                                     ziformula = ~min_t_between+urban_intensity+year)
+ttFS_zibbin_glmm2h <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ c.log_patch_area * c.log_F_metric_d2b1 +
+                                         clutch_size +
+                                         urban_intensity + manag_intensity +
+                                         light_pollution + noise_m + traffic +
+                                         min_t_between + laying_day + year + (1|id_nestbox),
+                                     weights = brood_size, data = ntits3,
+                                     family = glmmTMB::betabinomial(link = "logit"),
+                                     ziformula = ~min_t_between+urban_intensity+year)
+summary(ttFS_zibbin_glm2h) # AIC = 1361.8 vs 1374.5.
+summary(ttFS_zibbin_glmm2h) # AIC = 1363.8 vs 1376.5.
+# Note also that replacing "cumdd_before" by "min_t_before" does not change things much!
+
+
+## Fitting a model without both CIMMDD_BETWEEN, MIN_T_BETWEEN and LAYING_DAY (just in case):
+ttFS_zibbin_glm1_notemp <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_patch_area + log_F_metric_d2b1 +
+                                               clutch_size +
+                                               urban_intensity + manag_intensity +
+                                               light_pollution + noise_m + traffic +
+                                               year,
+                                             weights = brood_size, data = ntits3,
+                                             family = glmmTMB::betabinomial(link = "logit"),
+                                             ziformula = ~1) # Intercept only.
+summary(ttFS_zibbin_glm1_notemp) # AIC = 1381.2 vs 1377.5, so it worsen the fit (but makes "urban_intensity"
+# significant)!
+
+
+###### EXPLORATORY MODELS ######
+###### EXPLORATORY MODELS ######
+###### EXPLORATORY MODELS ######
+# For the exploratory models:
+summary(ttFS_zibbin_glmm1h) # AIC = 1366.7 and both R2_glmm = 0.79.
+## Significant variables: F-metric (++), clutch_size (-), manag_high (--), laying_day (--), and
+# year2022 (+++), and also [urban_intensity (+), year2021 and year2022 (---) for the ZI component]!
+## Almost significant variables: [min_t_between (+) for the ZI component]!
+summary(ttFS_zibbin_glmm2h) # AIC = 1363.8 and both R2_glmm = 0.8.
+## Significant variables: clutch_size (-), manag_high (--), light_pollution (-), laying_day (--)
+# and year2022 (+++), and the INTERACTION EFFECT (--); and also [urban_intensity (+), year2021
+# and year2022 (---) for the ZI component]!
+## Almost significant variables: the F-metric (+) and also [min_t_between (+) for the ZI component]!
+## Hypothesis 2 likely validated with a possible cross-over interaction!
+# Diagnostics for these models were mostly ok, there was no outliers, deviations, dispersion or
+# distributional problems.
+# Predictions were fairly ok but the models still made too narrow predictions and failed to
+# correctly predict total successes and failures.
+
+# I also tried removing "traffic" and it didn't change things much. When we used the "F-metric"
+# along with "urban_intensity" to model the ZI-part of the model, the effect of the "F-metric"
+# utterly disappeared suggesting that connectivity does not influence total fledging failures and
+# its effect in "F models" was actually a surrogate effect from "urban_intensity".
+
+## Since the interaction effects turned out significant, we have to explore them graphically to
+# interpret them!
+```
