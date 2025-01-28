@@ -2,14 +2,23 @@
 title: "Exploratory modelling report - Tits reproduction study, PubPrivLands project (Martin *et al.*, *in prep.*)"
 author: "François-Marie Martin"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
-output: rmdformats::readthedown
+output:
+  pdf_document:
+    toc: yes
+    toc_depth: '5'
+  html_document:
+    number_sections: yes
+    toc: yes
+    toc_depth: 5
 ---
 
-```{r setup, include=FALSE}
+```{r setup, echo=FALSE}
+rm(list=ls())
 knitr::opts_chunk$set(echo = FALSE)
 ```
 
-```{r data_import, warning=FALSE, message=FALSE}
+
+```{r DATA_IMPORT, message=FALSE, warning=FALSE}
 library(magrittr) # The only library that I truly need to load (in order to be able to use pipes).
 .pardefault <- par()
 
@@ -37,7 +46,8 @@ ntits <- readr::read_csv2(here::here("output", "tables", "ndata_final.csv"), col
   # reference group.
   dplyr::mutate(manag_low = ifelse(manag_intensity == "0", "1", "0"),
                 manag_mid = ifelse(manag_intensity == "1", "1", "0"),
-                manag_high = ifelse(manag_intensity == "2", "1", "0"))
+                manag_high = ifelse(manag_intensity == "2", "1", "0"),
+                c.log_woody_vw = log_woody_vw - stats::median(log_woody_vw))
 # NOTE: I have to load the "tits" final dataset exported by 'tfinal_EDAta()' in order to avoid
 # running the former function that is a bit long to run (but you can if you want).
 ntits %>% dplyr::mutate(dplyr::across(where(is.character), as.factor)) -> ntits
@@ -50,7 +60,6 @@ ntits %>% dplyr::mutate(dplyr::across(where(is.character), as.factor)) -> ntits
 In order to facilitate any attempt at reproducing this study, here is a depiction of the system information used to prepare and analyse the data from the PubPrivLands tits reproduction study (Martin *et al.* , *in prep.*).
 
 ```{r session information}
-rm(list=ls())
 sessionInfo()
 ```
 
@@ -75,20 +84,25 @@ To keep things short, please note that we will not present models diagnostics (t
 
 ******
 
-# 2. Models to explain tits clutch size
+# 2. Switched proxies models
+## 2.1. Models to explain tits CLUTCH SIZE
 
-```{r CS data preparation, warning=FALSE, message=FALSE}
+```{r CS data preparation, warning=FALSE, message=FALSE, echo=FALSE}
 ## To remove probable outliers (see initial 'ttCy_comglmm1' diagnostics in the 03_01_ntits_inference_modelling R file):
 ntits3 <- ntits[-c(111,156,170,181,210,227,326,362,374,379),]
 
-##  F+ COMPUTATION:
+## F+ COMPUTATION:
 ntits3 %>% dplyr::mutate(Fplus = patch_area+F_metric_d2b1) %>%
   dplyr::mutate(log_Fplus = log10(Fplus)) -> ntits3
 ```
 
-Results when we use the **total area of woody vegetation within 150 m of the nestboxes** (in m²) instead of the size of the **local patch area** (that is, the size of the patch of nesting/foraging habitat in which the nestbox is located) to explain the *survival of tits nestlings*:
 
-```{r CS WOODY_AREA, warning=FALSE, message=FALSE}
+
+### 2.1.1. Using *woody_area* instead of *patch_area*
+
+Results when we use the **total area of woody vegetation within 150 m of the nestboxes** (in m²) instead of the size of the **local patch area** (that is, the size of the patch of nesting/foraging habitat in which the nestbox is located) to explain the *size of tit clutches*:
+
+```{r CS WOODY_AREA, warning=FALSE, message=FALSE, echo=FALSE}
 ## Fitting a regular Conway-Maxwell (COM) Poisson mixed model (GLMM):
 ttCS_woodyAREA1 <- glmmTMB::glmmTMB(clutch_size ~ log_woody_area + log_F_metric_d2b1 + species +
                                     urban_intensity + manag_mid + manag_high +
@@ -110,9 +124,12 @@ summary(ttCS_woodyAREA2) # AIC = 1379.3 vs 1386 (for the final INFERENTIAL MODEL
 ```
 
 
-Results when we use the **total volume of woody vegetation within 150 m of the nestboxes** (in m²) instead of the size of the **local patch area** (that is, the size of the patch of nesting/foraging habitat in which the nestbox is located) to explain the *survival of tits nestlings*:
 
-```{r CS WOODY_VOLUME, warning=FALSE, message=FALSE}
+### 2.1.2. Using *woody_volume* instead of *patch_area*
+
+Results when we use the **total volume of woody vegetation within 150 m of the nestboxes** (in m²) instead of the size of the **local patch area** (that is, the size of the patch of nesting/foraging habitat in which the nestbox is located) to explain the *size of tit clutches*:
+
+```{r CS WOODY_VOLUME, warning=FALSE, message=FALSE, echo=FALSE}
 ## Fitting a regular Conway-Maxwell (COM) Poisson mixed model (GLMM):
 ttCS_woodyVOL1 <- glmmTMB::glmmTMB(clutch_size ~ log_woody_vol + log_F_metric_d2b1 + species +
                                     urban_intensity + manag_mid + manag_high +
@@ -134,9 +151,39 @@ summary(ttCS_woodyVOL2) # AIC = 1383 vs 1386 (for the final INFERENTIAL MODEL), 
 ```
 
 
-Results when we use the *F_plus* variable, i.e. the **addition** of the **local patch area** and the **F-metric** to explain the *survival of tits nestlings*:
 
-```{r CS Fplus, warning=FALSE, message=FALSE}
+### 2.1.3. Using *woody_vw* instead of *patch_area*
+
+Results when we use the **total volume of woody vegetation within 150 m of the nestboxes (weighted with a qualitative assessment of the structural complexity of the understory vegetation)** instead of the size of the **local patch area** (that is, the size of the patch of nesting/foraging habitat in which the nestbox is located) to explain the *size of tit clutches*:
+
+```{r CS WOODY_VW, warning=FALSE, message=FALSE, echo=FALSE}
+## Fitting a regular Conway-Maxwell (COM) Poisson mixed model (GLMM):
+ttCS_woodyVW1 <- glmmTMB::glmmTMB(clutch_size ~ log_woody_vw + log_F_metric_d2b1 + species +
+                                    urban_intensity + manag_mid + manag_high +
+                                    light_pollution + noise_m + traffic +
+                                    cumdd_30 + laying_day + year + (1|id_nestbox),
+                                 data = ntits3, family = glmmTMB::compois(link = "log"),
+                                 dispformula = ~1) # Rather long to fit.
+
+## Fitting the interaction model (COM-Poisson GLMM):
+ttCS_woodyVW2 <- glmmTMB::glmmTMB(clutch_size ~
+                                    c.log_woody_vol * c.log_F_metric_d2b1 + 
+                                    species + urban_intensity + manag_mid + manag_high +
+                                    light_pollution + noise_m + traffic +
+                                    cumdd_30 + laying_day + year + (1|id_nestbox),
+                                  data = ntits3, family = glmmTMB::compois(link = "log"),
+                                  dispformula = ~1) # Rather long to fit.
+summary(ttCS_woodyVW1) # AIC = 1383.8 vs 1384 (for the final INFERENTIAL MODEL).
+summary(ttCS_woodyVW2) # AIC = 1383 vs 1386 (for the final INFERENTIAL MODEL). Here again, the interaction is not that far from being significant.
+```
+
+
+
+### 2.1.4. Using *Fplus* instead of *patch_area*
+
+Results when we use the *F_plus* variable, i.e. the **addition** of the **local patch area** and the **F-metric** to explain the *size of tit clutches*:
+
+```{r CS Fplus, warning=FALSE, message=FALSE, echo=FALSE}
 ## Fitting a regular Conway-Maxwell (COM) Poisson mixed model (GLMM):
 ttCS_Fplus1 <- glmmTMB::glmmTMB(clutch_size ~ log_Fplus + species +
                                     urban_intensity + manag_mid + manag_high +
@@ -149,15 +196,39 @@ summary(ttCS_Fplus1) # AIC = 1391.3 vs 1384 (for the final INFERENTIAL MODEL).
 
 
 
+### 2.1.5. Using *F_metric_d2b0* instead of *F_metric_d2b1*
+
+Results when we use the *F_metric_d2b0* variable, i.e. the *F-metric* with no weighting for the size of the patches, to explain the *size of tit clutches*:
+
+```{r CS Fd2b0, warning=FALSE, message=FALSE, echo=FALSE}
+## Fitting a regular Conway-Maxwell (COM) Poisson mixed model (GLMM):
+ttCS_Fmod1 <- glmmTMB::glmmTMB(clutch_size ~ log_patch_area + log_F_metric_d2b0 + species +
+                                    urban_intensity + manag_mid + manag_high +
+                                    light_pollution + noise_m + traffic +
+                                    cumdd_30 + laying_day + year + (1|id_nestbox),
+                                  data = ntits3, family = glmmTMB::compois(link = "log"),
+                                  dispformula = ~1) # Rather long to fit.
+
+## Fitting the interaction model (COM-Poisson GLMM):
+ttCS_Fmod2 <- glmmTMB::glmmTMB(clutch_size ~
+                                    c.log_patch_area * log_F_metric_d2b0 + species +
+                                    urban_intensity + manag_mid + manag_high +
+                                    light_pollution + noise_m + traffic +
+                                    cumdd_30 + laying_day + year + (1|id_nestbox),
+                                  data = ntits3, family = glmmTMB::compois(link = "log"),
+                                  dispformula = ~1) # Rather long to fit.
+summary(ttCS_Fmod1) # AIC = 1384 vs 1384 (for the final INFERENTIAL MODEL).
+summary(ttCS_Fmod2) # AIC = 1385.4 vs 1384 (for the final INFERENTIAL MODEL).
+```
 
 \
 \
 
 ******
 
-# 3. Models to explain tits nestling survival
+## 2.2. Models to explain tits NESTLING SURVIVAL
 
-```{r FS data preparation, warning=FALSE, message=FALSE}
+```{r FS data preparation, warning=FALSE, message=FALSE, echo=FALSE}
 ntits3 <- ntits[-c(which(ntits$brood_size == 0)),]
 
 ##  F+ COMPUTATION:
@@ -166,9 +237,13 @@ ntits3 %>% dplyr::mutate(Fplus = patch_area+F_metric_d2b1) %>%
 ```
 
 
+
+### 2.2.1. Using *woody_area* instead of *patch_area*
+
+
 Results when we use the **total area of woody vegetation within 150 m of the nestboxes** (in m²) instead of the size of the **local patch area** (that is, the size of the patch of nesting/foraging habitat in which the nestbox is located) to explain the *survival of tits nestlings*:
 
-```{r FS WOODY_AREA, warning=FALSE, message=FALSE}
+```{r FS WOODY_AREA, warning=FALSE, message=FALSE, echo=FALSE}
 ## Fitting a ZIBBIN GLMM:
 ttFS_woodyAREA1 <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_woody_area + log_F_metric_d2b1 +
                                         clutch_size +
@@ -194,9 +269,13 @@ summary(ttFS_woodyAREA2) # AIC = 1378.2 vs 1376.5 (for the final INFERENTIAL MOD
 ```
 
 
+
+### 2.2.2. Using *woody_volume* instead of *patch_area*
+
+
 Results when we use the **total volume of woody vegetation within 150 m of the nestboxes** (in m²) instead of the size of the **local patch area** (that is, the size of the patch of nesting/foraging habitat in which the nestbox is located) to explain the *survival of tits nestlings*:
 
-```{r FS WOODY_VOLUME, warning=FALSE, message=FALSE}
+```{r FS WOODY_VOLUME, warning=FALSE, message=FALSE, echo=FALSE}
 ## Fitting a ZIBBIN GLMM:
 ttFS_woodyVOL1 <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_woody_vol + log_F_metric_d2b1 +
                                         clutch_size +
@@ -222,9 +301,42 @@ summary(ttFS_woodyVOL2) # AIC = 1376.7 vs 1376.5 (for the final INFERENTIAL MODE
 ```
 
 
+
+### 2.2.3. Using *woody_vw* instead of *patch_area*
+
+Results when we use the **total volume of woody vegetation within 150 m of the nestboxes (weighted with a qualitative assessment of the structural complexity of the understory vegetation)** instead of the size of the **local patch area** (that is, the size of the patch of nesting/foraging habitat in which the nestbox is located) to explain the *survival of tits nestlings*:
+
+```{r FS WOODY_VW, warning=FALSE, message=FALSE, echo=FALSE}
+## Fitting a ZIBBIN GLMM:
+ttFS_woodyVW1 <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_woody_vw + log_F_metric_d2b1 +
+                                        clutch_size +
+                                        urban_intensity + manag_mid + manag_high +
+                                        light_pollution + noise_m + traffic +
+                                        min_t_between + laying_day + year + (1|id_nestbox),
+                                      weights = brood_size, data = ntits3,
+                                      family = glmmTMB::betabinomial(link = "logit"),
+                                      ziformula = ~1) # Intercept only.
+
+## Fitting the interaction model (COM-Poisson GLMM):
+ttFS_woodyVW2 <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~
+                                    c.log_woody_vw * c.log_F_metric_d2b1 +
+                                        clutch_size +
+                                        urban_intensity + manag_mid + manag_high +
+                                        light_pollution + noise_m + traffic +
+                                        min_t_between + laying_day + year + (1|id_nestbox),
+                                      weights = brood_size, data = ntits3,
+                                      family = glmmTMB::betabinomial(link = "logit"),
+                                      ziformula = ~1) # Rather long to fit.
+summary(ttFS_woodyVW1) # AIC = 1379.6 vs 1379.5 (for the final INFERENTIAL MODEL).
+summary(ttFS_woodyVW2) # AIC = 1376.7 vs 1376.5 (for the final INFERENTIAL MODEL). Note that the interaction is almost significant.
+```
+
+### 2.2.4. Using *Fplus* instead of *patch_area*
+
+
 Results when we use the *F_plus* variable, i.e. the **addition** of the **local patch area** and the **F-metric** to explain the *survival of tits nestlings*:
 
-```{r FS Fplus, warning=FALSE, message=FALSE}
+```{r FS Fplus, warning=FALSE, message=FALSE, echo=FALSE}
 ## Fitting a ZIBBIN GLMM:
 ttFS_Fplus1 <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_Fplus +
                                         clutch_size +
@@ -237,14 +349,45 @@ ttFS_Fplus1 <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_Fplus +
 
 summary(ttFS_Fplus1) # AIC = 1377.6 vs 1379.5 (for the final INFERENTIAL MODEL).
 ```
+
+
+
+### 2.2.5. Using *F_metric_d2b0* instead of *F_metric_d2b1*
+
+Results when we use the *F_metric_d2b0* variable, i.e. the *F-metric* with no weighting for the size of the patches, to explain the *nestling survival*:
+
+```{r FS Fd2b0, warning=FALSE, message=FALSE, echo=FALSE}
+## Fitting a ZIBBIN GLMM:
+ttFS_Fmod1 <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_woody_vol + log_F_metric_d2b0 +
+                                        clutch_size +
+                                        urban_intensity + manag_mid + manag_high +
+                                        light_pollution + noise_m + traffic +
+                                        min_t_between + laying_day + year + (1|id_nestbox),
+                                      weights = brood_size, data = ntits3,
+                                      family = glmmTMB::betabinomial(link = "logit"),
+                                      ziformula = ~1) # Intercept only.
+
+ttFS_Fmod2 <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~
+                                    c.log_woody_vol * c.log_F_metric_d2b0 +
+                                        clutch_size +
+                                        urban_intensity + manag_mid + manag_high +
+                                        light_pollution + noise_m + traffic +
+                                        min_t_between + laying_day + year + (1|id_nestbox),
+                                      weights = brood_size, data = ntits3,
+                                      family = glmmTMB::betabinomial(link = "logit"),
+                                      ziformula = ~1) # Rather long to fit.
+summary(ttFS_Fmod1) # AIC = 1381.4 vs 1379.5 (for the final INFERENTIAL MODEL).
+summary(ttFS_Fmod2) # AIC = 1373 vs 1376.5 (for the final INFERENTIAL MODEL). Note that the interaction is significant and the AIC is quite improved!
+```
+
 \
 \
 
 ******
 
-# 4. Models to explain tits nestling mass
+## 2.3. Models to explain tits NESTLING MASS
 
-```{r MA data preparation, warning=FALSE, message=FALSE}
+```{r MA data preparation, warning=FALSE, message=FALSE, echo=FALSE}
 ntits %>% dplyr::filter(is.na(mass) == FALSE) -> ntits3
 
 ##  F+ COMPUTATION:
@@ -253,9 +396,13 @@ ntits3 %>% dplyr::mutate(Fplus = patch_area+F_metric_d2b1) %>%
 ```
 
 
+
+### 2.3.1. Using *woody_area* instead of *patch_area*
+
+
 Results when we use the **total area of woody vegetation within 150 m of the nestboxes** (in m²) instead of the size of the **local patch area** (that is, the size of the patch of nesting/foraging habitat in which the nestbox is located) to explain the *mass of tits nestlings*:
 
-```{r MA WOODY_AREA, warning=FALSE, message=FALSE}
+```{r MA WOODY_AREA, warning=FALSE, message=FALSE, echo=FALSE}
 ttMA_woodyAREA1 <- glmmTMB::glmmTMB(mass ~ log_woody_area + log_F_metric_d2b1 + 
                                       species + clutch_size +
                                 urban_intensity + manag_mid + manag_high +
@@ -272,9 +419,13 @@ summary(ttMA_woodyAREA1) # AIC = 1142.8 vs 1143.3. (for the final INFERENTIAL MO
 summary(ttMA_woodyAREA2) # AIC = 1144.2 vs 1144.7 (for the final INFERENTIAL MODEL).
 ```
 
+
+
+### 2.3.2. Using *woody_volume* instead of *patch_area*
+
 Results when we use the **total volume of woody vegetation within 150 m of the nestboxes** (in m²) instead of the size of the **local patch area** (that is, the size of the patch of nesting/foraging habitat in which the nestbox is located) to explain the *mass of tits nestlings*:
 
-```{r MA WOODY_VOLUME, warning=FALSE, message=FALSE}
+```{r MA WOODY_VOLUME, warning=FALSE, message=FALSE, echo=FALSE}
 ttMA_woodyVOL1 <- glmmTMB::glmmTMB(mass ~ log_woody_vol + log_F_metric_d2b1 + 
                                       species + clutch_size +
                                 urban_intensity + manag_mid + manag_high +
@@ -292,9 +443,33 @@ summary(ttMA_woodyVOL2) # AIC = 1144.3 vs 1144.7 (for the final INFERENTIAL MODE
 ```
 
 
+
+### 2.3.3. Using *woody_vw* instead of *patch_area*
+
+Results when we use the **total volume of woody vegetation within 150 m of the nestboxes (weighted with a qualitative assessment of the structural complexity of the understory vegetation)** instead of the size of the **local patch area** (that is, the size of the patch of nesting/foraging habitat in which the nestbox is located) to explain the *mass of tits nestlings*:
+
+```{r MA WOODY_VW, warning=FALSE, message=FALSE, echo=FALSE}
+ttMA_woodyVW1 <- glmmTMB::glmmTMB(mass ~ log_woody_vw + log_F_metric_d2b1 + 
+                                      species + clutch_size +
+                                urban_intensity + manag_mid + manag_high +
+                                light_pollution + noise_m + traffic +
+                                min_t_between + laying_day + year + (1|id_nestbox),
+                              data = ntits3, family = "gaussian")
+
+ttMA_woodyVW2 <- glmmTMB::glmmTMB(mass ~ c.log_woody_vw * c.log_F_metric_d2b1 + species +
+                                clutch_size + urban_intensity + manag_mid + manag_high +
+                                light_pollution + noise_m + traffic +
+                                min_t_between + laying_day + year + (1|id_nestbox),
+                              data = ntits3, family = "gaussian")
+summary(ttMA_woodyVW1) # AIC = 1143 vs 1143.3. (for the final INFERENTIAL MODEL).
+summary(ttMA_woodyVW2) # AIC = 1144.9 vs 1144.7 (for the final INFERENTIAL MODEL).
+```
+
+### 2.3.4. Using *Fplus* instead of *patch_area*
+
 Results when we use the *F_plus* variable, i.e. the **addition** of the **local patch area** and the **F-metric** to explain the *mass of tits nestlings*:
 
-```{r MA Fplus, warning=FALSE, message=FALSE}
+```{r MA Fplus, warning=FALSE, message=FALSE, echo=FALSE}
 ttMA_Fplus <- glmmTMB::glmmTMB(mass ~ log_Fplus + species + clutch_size +
                                 urban_intensity + manag_mid + manag_high +
                                 light_pollution + noise_m + traffic +
@@ -305,36 +480,57 @@ summary(ttMA_Fplus) # AIC = 1142.3 vs 1143.3. (for the final INFERENTIAL MODEL).
 
 
 
+### 2.3.5. Using *F_metric_d2b0* instead of *F_metric_d2b1*
+
+Results when we use the *F_metric_d2b0* variable, i.e. the *F-metric* with no weighting for the size of the patches, to explain the *nestling mass*:
+
+```{r MA Fd2b0, warning=FALSE, message=FALSE, echo=FALSE}
+ttMA_Fmod1 <- glmmTMB::glmmTMB(mass ~ log_woody_vol + log_F_metric_d2b0 + 
+                                      species + clutch_size +
+                                urban_intensity + manag_mid + manag_high +
+                                light_pollution + noise_m + traffic +
+                                min_t_between + laying_day + year + (1|id_nestbox),
+                              data = ntits3, family = "gaussian")
+
+ttMA_Fmod2 <- glmmTMB::glmmTMB(mass ~ c.log_woody_vol * c.log_F_metric_d2b0 + species +
+                                clutch_size + urban_intensity + manag_mid + manag_high +
+                                light_pollution + noise_m + traffic +
+                                min_t_between + laying_day + year + (1|id_nestbox),
+                              data = ntits3, family = "gaussian")
+summary(ttMA_Fmod1) # AIC = 1141.6 vs 1143.3. (for the final INFERENTIAL MODEL).
+summary(ttMA_Fmod2) # AIC = 1143.6 vs 1144.7 (for the final INFERENTIAL MODEL).
+```
+
+\
+\
+
+******
+
+## 2.4. Conclusion on switched proxies models
+
+The variant models results presented in the above sections give **pretty similar *patterns of results* ** to our final inferential models, regardless of the reproductive trait investigated. Interestingly:
+
+* The model using *woody_area* gives slightly better results than our *inferential model* to explain **clutch size**, with the *F-metric* having a significant positive effect on tits clutch size. It could be a sign of the existence of a more complex interaction to be determined. 
+* Estimates, standard errors and their associated p-values jitter a bit, which is to be expected. Some parameterisations even gave "better" results (as in lower p-values, which is what many scientist run after), but that is not the point.
+* Overall, results remain consistent, particularly the fact that *connectivity metrics* seem to have a positive effect on reproductive traits, whereas the *amount of local habitat* alone (e.g. patch area, woody vegetation area or volume) is not a good predictor of the traits examined here, at least not with our dataset. It should be noted that we also ran the same models but with predictors computed using other buffer radiuses, and patterns remained the same. We do not present them here for the sake of conciseness (but you can easily reproduce these results using the R files), this report is already long enough (especially for a report that nobody will ever read...).
+
+\
+\
+
+******
+
+# 3. Tuning the zero-inflation (ZI) component of the NESTLING SURVIVAL model
+## 3.1. Exploratory models
+
+```{r ZI tuning, warning=FALSE, message=FALSE, echo=FALSE}
+ntits3 <- ntits[-c(which(ntits$brood_size == 0)),]
 
 
 
-
-# CONCLUSION????
-# CONCLUSION????
-# CONCLUSION????
-Overall, these variant models give **very similar *patterns of results* ** to our final inferential model. Interestingly:
-
-* The model using *woody_area* gives slightly better results than our *inferential model*, with the *F-metric* having a significant positive effect on tits clutch size.
-
-SAME FOR OTHER PROXIES OF F?????
-SAME FOR OTHER PROXIES OF F?????
-SAME FOR OTHER PROXIES OF F?????
-SAME FOR buffer50 OR 300?????
-SAME FOR buffer50 OR 300?????
-SAME FOR buffer50 OR 300?????
-SAME FOR buffer50 OR 300?????
-SAME FOR buffer50 OR 300?????
-
-
-# XXX. Tuning the ZI component...
-# XXX. Tuning the ZI component...
-# XXX. Tuning the ZI component...
-
-```{r TO BE DELETED, eval=FALSE}
 ## Tuning the ZI part of the model:
 ttFS_zibbin_glm1e <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_patch_area + log_F_metric_d2b1 +
                                         clutch_size +
-                                        urban_intensity + manag_intensity +
+                                        urban_intensity + manag_mid + manag_high +
                                         light_pollution + noise_m + traffic +
                                         min_t_between + laying_day + year,
                                       weights = brood_size, data = ntits3,
@@ -343,7 +539,7 @@ ttFS_zibbin_glm1e <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_patch_area +
 
 ttFS_zibbin_glm1f <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_patch_area + log_F_metric_d2b1 +
                                         clutch_size +
-                                        urban_intensity + manag_intensity +
+                                        urban_intensity + manag_mid + manag_high +
                                         light_pollution + noise_m + traffic +
                                         min_t_between + laying_day + year,
                                       weights = brood_size, data = ntits3,
@@ -352,7 +548,7 @@ ttFS_zibbin_glm1f <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_patch_area +
 
 ttFS_zibbin_glm1g <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_patch_area + log_F_metric_d2b1 +
                                         clutch_size +
-                                        urban_intensity + manag_intensity +
+                                        urban_intensity + manag_mid + manag_high +
                                         light_pollution + noise_m + traffic +
                                         min_t_between + laying_day + year,
                                       weights = brood_size, data = ntits3,
@@ -361,7 +557,7 @@ ttFS_zibbin_glm1g <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_patch_area +
 
 ttFS_zibbin_glm1h <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_patch_area + log_F_metric_d2b1 +
                                         clutch_size +
-                                        urban_intensity + manag_intensity +
+                                        urban_intensity + manag_mid + manag_high +
                                         light_pollution + noise_m + traffic +
                                         min_t_between + laying_day + year,
                                       weights = brood_size, data = ntits3,
@@ -370,7 +566,7 @@ ttFS_zibbin_glm1h <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_patch_area +
 
 ttFS_zibbin_glmm1h <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_patch_area + log_F_metric_d2b1 +
                                         clutch_size +
-                                        urban_intensity + manag_intensity +
+                                        urban_intensity + manag_mid + manag_high +
                                         light_pollution + noise_m + traffic +
                                         min_t_between + laying_day + year + (1|id_nestbox),
                                       weights = brood_size, data = ntits3,
@@ -379,83 +575,63 @@ ttFS_zibbin_glmm1h <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_patch_area 
 
 ttFS_zibbin_glm1i <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_patch_area + log_F_metric_d2b1 +
                                         clutch_size +
-                                        urban_intensity + manag_intensity +
+                                        urban_intensity + manag_mid + manag_high +
                                         light_pollution + noise_m + traffic +
                                         min_t_between + laying_day + year,
                                       weights = brood_size, data = ntits3,
                                       family = glmmTMB::betabinomial(link = "logit"),
                                       ziformula = ~laying_day+urban_intensity+year) # Intercept only.
-summary(ttFS_zibbin_glm1e) # AIC = 1374.5 vs 1377.5.
+summary(ttFS_zibbin_glm1e) # AIC = 1374.7 vs 1377.5 (for the final INFERENTIAL MODEL [GLM]).
 summary(ttFS_zibbin_glm1f) # AIC = 1375.2.
 summary(ttFS_zibbin_glm1g) # AIC = 1376.8.
-summary(ttFS_zibbin_glm1h) # AIC = 1364.7.
-summary(ttFS_zibbin_glmm1h) # AIC = 1366.7 (mind the RE's uselessness).
-summary(ttFS_zibbin_glm1i) # AIC = 1367.
-# I also tried removing "traffic" and it doesn't change things much. When we use the "F-metric" along with
-# "urban_intensity" to model the ZI-part of the model, the effect of the "F-metric" utterly disappear
-# suggesting that connectivity does not influence total fledging failures and its effect in "F models"
-# is actually a surrogate effect from "urban_intensity". So I'll only diagnose the "H models".
+summary(ttFS_zibbin_glm1h) # AIC = 1364.9.
+summary(ttFS_zibbin_glmm1h) # AIC = 1366.9 (mind the RE's uselessness).
+summary(ttFS_zibbin_glm1i) # AIC = 1367.1.
+# I also tried removing "traffic" and it doesn't change things much. When we use the "F-metric" along 
+# with "urban_intensity" to model the ZI-part of the model, the effect of the "F-metric" utterly 
+# disappear suggesting that connectivity does not influence total fledging failures and its effect in 
+# "F models" is actually a surrogate effect from "urban_intensity". So I'll only diagnose the "H 
+# models".
 # Similarly, the surprising effects of the temperature proxies might actually be linked to humidity, a
 # variable we could not measure.
 
-ttFS_zibbin_glm2h <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ c.log_patch_area * c.log_F_metric_d2b1 +
+ttFS_zibbin_glm2h <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ c.log_patch_area * 
+                                        c.log_F_metric_d2b1 +
                                         clutch_size +
-                                        urban_intensity + manag_intensity +
+                                        urban_intensity + manag_mid + manag_high +
                                         light_pollution + noise_m + traffic +
                                         min_t_between + laying_day + year,
                                      weights = brood_size, data = ntits3,
                                      family = glmmTMB::betabinomial(link = "logit"),
                                      ziformula = ~min_t_between+urban_intensity+year)
-ttFS_zibbin_glmm2h <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ c.log_patch_area * c.log_F_metric_d2b1 +
+ttFS_zibbin_glmm2h <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ c.log_patch_area * 
+                                         c.log_F_metric_d2b1 +
                                          clutch_size +
-                                         urban_intensity + manag_intensity +
+                                         urban_intensity + manag_mid + manag_high +
                                          light_pollution + noise_m + traffic +
                                          min_t_between + laying_day + year + (1|id_nestbox),
                                      weights = brood_size, data = ntits3,
                                      family = glmmTMB::betabinomial(link = "logit"),
                                      ziformula = ~min_t_between+urban_intensity+year)
-summary(ttFS_zibbin_glm2h) # AIC = 1361.8 vs 1374.5.
-summary(ttFS_zibbin_glmm2h) # AIC = 1363.8 vs 1376.5.
+summary(ttFS_zibbin_glm2h) # AIC = 1362 vs 1374.5.
+summary(ttFS_zibbin_glmm2h) # AIC = 1364 vs 1376.5.
 # Note also that replacing "cumdd_before" by "min_t_before" does not change things much!
-
-
-## Fitting a model without both CIMMDD_BETWEEN, MIN_T_BETWEEN and LAYING_DAY (just in case):
-ttFS_zibbin_glm1_notemp <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_patch_area + log_F_metric_d2b1 +
-                                               clutch_size +
-                                               urban_intensity + manag_intensity +
-                                               light_pollution + noise_m + traffic +
-                                               year,
-                                             weights = brood_size, data = ntits3,
-                                             family = glmmTMB::betabinomial(link = "logit"),
-                                             ziformula = ~1) # Intercept only.
-summary(ttFS_zibbin_glm1_notemp) # AIC = 1381.2 vs 1377.5, so it worsen the fit (but makes "urban_intensity"
-# significant)!
-
-
-###### EXPLORATORY MODELS ######
-###### EXPLORATORY MODELS ######
-###### EXPLORATORY MODELS ######
-# For the exploratory models:
-summary(ttFS_zibbin_glmm1h) # AIC = 1366.7 and both R2_glmm = 0.79.
-## Significant variables: F-metric (++), clutch_size (-), manag_high (--), laying_day (--), and
-# year2022 (+++), and also [urban_intensity (+), year2021 and year2022 (---) for the ZI component]!
-## Almost significant variables: [min_t_between (+) for the ZI component]!
-summary(ttFS_zibbin_glmm2h) # AIC = 1363.8 and both R2_glmm = 0.8.
-## Significant variables: clutch_size (-), manag_high (--), light_pollution (-), laying_day (--)
-# and year2022 (+++), and the INTERACTION EFFECT (--); and also [urban_intensity (+), year2021
-# and year2022 (---) for the ZI component]!
-## Almost significant variables: the F-metric (+) and also [min_t_between (+) for the ZI component]!
-## Hypothesis 2 likely validated with a possible cross-over interaction!
-# Diagnostics for these models were mostly ok, there was no outliers, deviations, dispersion or
-# distributional problems.
-# Predictions were fairly ok but the models still made too narrow predictions and failed to
-# correctly predict total successes and failures.
-
-# I also tried removing "traffic" and it didn't change things much. When we used the "F-metric"
-# along with "urban_intensity" to model the ZI-part of the model, the effect of the "F-metric"
-# utterly disappeared suggesting that connectivity does not influence total fledging failures and
-# its effect in "F models" was actually a surrogate effect from "urban_intensity".
-
-## Since the interaction effects turned out significant, we have to explore them graphically to
-# interpret them!
 ```
+
+\
+\
+
+******
+
+## 3.2. Conclusion on the exploratory ZI models
+
+As could have been expected, tuning the zero-inflation (ZI) component of the *nestling survival* models (reminder: zero-inflated beta-binomial GLM(M)s) **quite strongly improved** the predictive abilities of the models, as measured by AIC. Among these *exploratory ZI models*, the best ones we could think of were the ones using *min_t_between*, *urban_intensity*, and *years* as predictors of the ZI, which all turned out significant or almost significant with a gain of 10 to 12 points of AIC depending on model considered (i.e. the `ttFS_zibbin_glmm1h` and `ttFS_zibbin_glmm2h` models)!  
+Diagnostics for these models were mostly ok: there was no outliers, deviations, dispersion or
+distributional problems. Predictions were fairly good as well but the models still made too narrow predictions and failed to correctly predict total successes and failures (so this is quite similar to our final inferential models).  
+
+These exploration thus suggest that increased *urban intensity* and *minimal temperatures* during the rearing of nestlings lowers their chances of survival.  
+We also tried removing "traffic" but it didn't change things much. When we used the *F-metric*
+along with *urban_intensity* to model the ZI-part of the model, the effect of the former
+utterly disappears suggesting that connectivity does not influence total fledging failures and
+its effect in "F models" was actually a surrogate effect from "urban_intensity".
+
