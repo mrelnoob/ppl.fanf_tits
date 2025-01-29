@@ -1223,11 +1223,11 @@ readr::write_csv2(x = res.LRT_inteff$test, file = here::here("output", "tables",
 
 ### *** 3.1.3.2. Confidence intervals for estimated parameters ----
 tictoc::tic("CI for additive LMM parameters")
-res.ttMA_addeff_CI_boot <- confint(ttMA_lmm1b)
-tt <- as.data.frame(res.ttMA_addeff_CI_boot)
+res.ttMA_regCI_addeff <- confint(ttMA_lmm1b)
+tt <- as.data.frame(res.ttMA_regCI_addeff)
 tt$parameters <- rownames(tt)
 readr::write_csv2(x = tt,
-                  file = here::here("output", "tables", "res.ttMA_CI_addeff.csv"))
+                  file = here::here("output", "tables", "res.ttMA_regCI_addeff.csv"))
 tictoc::toc() # DISCLAIMER: took ~11s to run!
 
 
