@@ -421,10 +421,10 @@ summary(ttCy_comglmm1) # AIC = 1384 and Marg_R2_glmm = 0.105; Cond_R2_glmm = 0.1
 
 ########################## *****************************************###############################
 # -------------------------------------- #
-##### 2. Modelling fledging survival #####
+##### 2. Modelling nestling survival #####
 # -------------------------------------- #
 
-##### * 2.1. Fledging survival: Beta-binomial GLMM -----------------------------
+##### * 2.1. Nestling survival: Beta-binomial GLMM -----------------------------
 # ---------------------------------------------------------------------------- #
 ### ** 2.1.1. Initial model fit ----
 # __________________________________
@@ -434,13 +434,13 @@ summary(ttCy_comglmm1) # AIC = 1384 and Marg_R2_glmm = 0.105; Cond_R2_glmm = 0.1
 # stochastic events that cannot be accounted for by our data):
 ntits3 <- ntits[-c(which(ntits$brood_size == 0)),]
 # Preliminary diagnostics for the initial models (not shown here but easily reproducible) also
-# identified significant overdispersion for fledging survival. To account for that, Harrison (2014 -
+# identified significant overdispersion for nestling survival. To account for that, Harrison (2014 -
 # links: https://doi.org/10.7717/peerj.616) recommends to compare the use of an observation-level
 # random effect (OLRE) with the use of a beta-binomial model, so that's what we did (see below):
 ntits3$id_obs <- as.factor(1:nrow(ntits3)) # To create an observation-level RE (OLRE).
 
 # Note also that in these models, we included "clutch_size" as a predictor because it is likely an
-# important predictor of fledging survival. However, as could have been expected, it lead to
+# important predictor of nestling survival. However, as could have been expected, it lead to
 # pretty strong collinearity issues with "species" as it is one of the strongest predictors of
 # tits' clutch size. We thus removed "species" from the list of predictors for the benefit of
 # "clutch_size" as the removal of "species" had a lesser effect to reduce collinearity.
@@ -651,7 +651,7 @@ par(.pardefault)
 resid <- stats::resid(ttFS_zibbin_glmm1, type = 'response')
 plot(resid, id = 0.05, idLabels = ~.obs) # There seems to be 2 groups of residuals (linked to ZI?).
 # performance::check_outliers(ttFS_zibbin_glmm1) # Does not work for this type of model.
-ntits3[which(resid < -0.4),] # Nestboxes with the lowest residuals = ~0% fledging survival!
+ntits3[which(resid < -0.4),] # Nestboxes with the lowest residuals = ~0% nestling survival!
 
 # To further investigate patterns, I can plot the residuals against some predictors:
 plot(x = ntits3$noise_m, y = resid) # Seems rather ok although we once again find patterns linked
@@ -730,7 +730,7 @@ performance::check_overdispersion(x = ttFS_zibbin_glmm1) # Overdispersion detect
 probabilities <- stats::predict(object = ttFS_zibbin_glmm1, type = "response") # Extract the
 # predicted probabilities.
 par(mfrow= c(1,2))
-hist(probabilities, main = "Predicted proportions", xlab = "fledging survival")
+hist(probabilities, main = "Predicted proportions", xlab = "nestling survival")
 hist(ntits3$fledgling_nb/ntits3$brood_size, main = "Observed proportions", xlab = "Fledging rate")
 par(.pardefault)
 # The ZIBBIN models globally fail to correctly predict the data. Prediction ranges are too narrow,
@@ -899,7 +899,7 @@ sjPlot::plot_model(ttFS_zibbin_glmm2, type = "pred",
                    bias_correction = TRUE,
                    title = "", # If I don't let it blank (and delete it), it sets a title by default.
                    axis.title = c("Local patch area",
-                                  "Predicted fledging survival rate"),
+                                  "Predicted nestling survival rate"),
                    legend.title = "Flux metric",
                    colors = c("darkred", "white", "darkorange", "darkolivegreen3",
                               "chartreuse4"), # For a reason I don't understand, the 2nd colour in
@@ -918,7 +918,7 @@ sjPlot::plot_model(ttFS_zibbin_glmm2, type = "pred",
                    bias_correction = TRUE,
                    title = "", # If I don't let it blank (and delete it), it sets a title by default.
                    axis.title = c("Connectivity (F-metric)",
-                                  "Predicted fledging survival rate"),
+                                  "Predicted nestling survival rate"),
                    legend.title = "Patch area",
                    colors = c("darkred", "white", "darkorange", "darkolivegreen3",
                               "chartreuse4"), # For a reason I don't understand, the 2nd colour in
@@ -952,7 +952,7 @@ lattice::wireframe(fledging_rate ~ c.log_patch_area + c.log_F_metric_d2b1, data=
                    main = "Predicted fledging rate",
                    drape = TRUE,
                    colorkey = TRUE,
-                   zlab = list("Fledging survival rate", cex=1.3, rot=90),
+                   zlab = list("Nestling survival rate", cex=1.3, rot=90),
                    xlab = list("Patch area", cex=1.3, rot=-40),
                    ylab = list("F-metric", cex=1.3, rot=17),
                    scales = list(arrows=FALSE, cex=1, tick.number = 10,
@@ -982,11 +982,11 @@ summary(ttFS_zibbin_glmm2) # AIC = 1376.5 and both R2_glmm = 0.19!
 # Diagnostics from the beta-binomial models were all satisfactory if we excluded "species" from
 # the models as it is collinear with "clutch_size". We thus chose to keep "clutch_size" as
 # it is a more informative predictor and yielded better diagnostics. However, it should be noted
-# that there was a species effect as blue tits tended to have a lower fledging survival than
+# that there was a species effect as blue tits tended to have a lower nestling survival than
 # Parus major:
 ntits3 %>% dplyr::mutate(fledging_success = fledgling_nb/clutch_size) %>%
   dplyr::group_by(species) %>%
-  dplyr::summarise(mean_fs = mean(fledging_success)) # Note that this mean fledging survival does
+  dplyr::summarise(mean_fs = mean(fledging_success)) # Note that this mean nestling survival does
 # not account for the effect of the covariates unlike a coefficient estimate (you could
 # alternatively fit a model replacing "clutch_size" by "species" or using both, to estimate a
 # more accurate effect).
