@@ -10,20 +10,29 @@ The `ppl.fanf_tits` project (and associated Github repository) is meant
 to contain all the R code I used to clean, explore, and analyse the data
 from the urban tits reproduction study launched in 2021 in the context
 of the PubPrivLands project. The aim was to investigate the importance
-of foraging habitat connectivity and patch size to explain the breeding
-success of urban Great tits (*Parus major*) and Blue tits (*Cyanistes
-caeruleus*) in Dijon, France. In accordance to the FAIR (Findable,
-Accessible, Interoperable, Reusable) principles of open-science, you
-will find in the `ppl.fanf_tits` repository all the **data and codes** I
-used to produce the results presented in the manuscript we submitted to
-*Journal of Biogeography* and that is currently called “Foraging habitat
-connectivity is more important than local habitat quantity to explain
-urban tits breeding success”. Upon acceptance, I will update this file
-to link it to the DOI of the article (if you intend to reuse this
-dataset, please cite the associated article in your own communications).
+of foraging habitat connectivity and greenspace patch size to explain
+the breeding success of urban Great tits (*Parus major*) and Blue tits
+(*Cyanistes caeruleus*) in Dijon, France. In accordance to the FAIR
+(Findable, Accessible, Interoperable, Reusable) principles of
+open-science, you will find in the `ppl.fanf_tits` repository all the
+**data and codes** I used to produce the results presented in the
+manuscript we submitted to *Landscape and Urban Planning* and that is
+currently called “Size doesn’t always matter: greenspace connectivity
+can offset insufficient habitat patch size to improve urban tits
+breeding success”. **Upon acceptance**, I will update this file to link
+it to the DOI of the article and deposit the data and metadata to a more
+permanent repository such as Zenodo (if you intend to reuse this
+dataset, please cite the associated reference in your own
+communications).
 
-If you have any question, feel free to contact me through my Github
-profile or using the e-mail address given in the manuscript.
+Note that, for obvious reasons, there may be slight differences in the
+name of the variables between the manuscript and the code. For instance,
+that is the case for the two *variables of interest*, namely “greenspace
+area” (called “patch_area” in the code) and “greenspace connectivity”
+(called “log_F_metric_d2b1” or simply “F_metric” in the code). But
+mostly, the names are pretty straightforward to understand. If you have
+any question, feel free to contact me through my Github profile or using
+the e-mail address given in the manuscript.
 
 ## Content
 
