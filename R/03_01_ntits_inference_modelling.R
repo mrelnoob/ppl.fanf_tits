@@ -11,6 +11,12 @@
 # to additional questions and perspectives that have, by nature, far less support as the data have
 # already been used for formal testing (so type-I error rates aren't properly controlled for anymore)!
 
+# IMPORTANT NOTE: because of changes related to successive submissions, the names of the variables
+# may vary slightly between the manuscript and the code. For instance, that is the case for the two
+# "variables of interest", namely "greenspace area" (called "patch_area" in the code) and
+# "greenspace connectivity" (called "log_F_metric_d2b1" or simply "F_metric" in the code). But
+# mostly, the names are pretty straightforward to understand.
+
 
 
 
