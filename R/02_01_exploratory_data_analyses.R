@@ -109,8 +109,15 @@ tfinal_EDAta <- function(){
   # _______________________
 
   tits_clean <- tdata_upD_final()$clean_dataset
-  tits_clean %>% dplyr::filter(dist == 150) -> tits_clean # Only selects the 150m-based dataset!
+  tits_clean %>% dplyr::filter(dist == 50) -> tits_clean_50 # Only selects the 50m-based dataset!
+  tits_clean %>% dplyr::filter(dist == 100) -> tits_clean_100 # Only selects the 100m-based dataset!
+  tits_clean %>% dplyr::filter(dist == 150) -> tits_clean_150 # Only selects the 150m-based dataset!
+  tits_clean %>% dplyr::filter(dist == 200) -> tits_clean_200 # Only selects the 200m-based dataset!
 
+
+  ## IMPORTANT NOTE: The code below only shows the treatments for the "tits_clean_150" dataset
+  # (if you want to apply it to the other datasets, you have to manually change the dataset name
+  # manually):
   manag <- readr::read_csv2(here::here("data", "veg_manag_factor.csv"), # To import another (late
                             # coming) independent variable.
                             col_names = TRUE, na = "NA",
@@ -118,7 +125,7 @@ tfinal_EDAta <- function(){
                                                     manag_intensity = readr::col_factor(
                                                       levels = c("0", "1", "2"),
                                                       include_na = FALSE)))
-  tits_clean <- dplyr::inner_join(tits_clean, manag, by = "id_nestbox")
+  tits_clean_150 <- dplyr::inner_join(tits_clean_150, manag, by = "id_nestbox")
 
   ### To import the connectivity metrics computed for both species (using the Bash script provided
   # in the '02_00_graphab_analyses.R' file):
@@ -128,7 +135,7 @@ tfinal_EDAta <- function(){
                                                           id_patch = readr::col_factor()))
   cmetrics_pm %>% dplyr::select(-cost_to_patch, -id_patch, -patch_area, -perim,
                                 -pmRr_d1_capa2, -pmRr_d2_capa2, -pmRr_d3_capa2) %>%
-    dplyr::inner_join(tits_clean, cmetrics_pm, by = "id_nestbox", multiple = "all") -> ttt # Only
+    dplyr::inner_join(tits_clean_150, cmetrics_pm, by = "id_nestbox", multiple = "all") -> ttt # Only
   # selects some metrics!
 
   cmetrics_cc <- readr::read_csv2(here::here("data", "cmetrics_cc.csv"),
@@ -143,23 +150,25 @@ tfinal_EDAta <- function(){
   ### ** 1.1.2. Binding ----
   # ________________________
 
-  tits_clean$age_num <- as.numeric(as.character(tits_clean$age_class))
-  tits_clean$strata_num <- as.numeric(as.character(tits_clean$strata_div))
-  tits_clean$manag_num <- as.numeric(as.character(tits_clean$manag_intensity))
-  tits_clean %>%  dplyr::relocate(manag_intensity, .after = age_class) -> tits_clean
-  tits_clean %>%  dplyr::relocate(manag_num, .after = manag_intensity) -> tits_clean
-  tits_clean %>%  dplyr::relocate(age_num, .after = age_class) %>%
-    dplyr::rename(traffic = trafic) -> tits_clean
+  tits_clean_150$age_num <- as.numeric(as.character(tits_clean_150$age_class))
+  tits_clean_150$strata_num <- as.numeric(as.character(tits_clean_150$strata_div))
+  tits_clean_150$manag_num <- as.numeric(as.character(tits_clean_150$manag_intensity))
+  tits_clean_150 %>%  dplyr::relocate(manag_intensity, .after = age_class) -> tits_clean_150
+  tits_clean_150 %>%  dplyr::relocate(manag_num, .after = manag_intensity) -> tits_clean_150
+  tits_clean_150 %>%  dplyr::relocate(age_num, .after = age_class) %>%
+    dplyr::rename(traffic = trafic) -> tits_clean_150
 
-  ntits <- cbind(tits_clean, ttt[,2:26]) # To select all patch related variables!
-  ntits %>% dplyr::select(-dist, -breeding_window, -father_id, -mother_id, -mean_winter_t,
+
+  ## IMPORTANT NOTE: here also, I only show the code for the "tits_clean_150" dataset:
+  ntits200 <- cbind(tits_clean_200, ttt[,2:26]) # To select all patch related variables!
+  ntits200 %>% dplyr::select(-dist, -breeding_window, -father_id, -mother_id, -mean_winter_t,
                           -sd_winter_t, -lsource_vs150_m, -lsource_vs150_iq,
-                          -soft_manag_area) -> ntits
-  rm(ttt, cmetrics_pm, cmetrics_cc, manag, tits_clean)
-  ntits <- tibble::as_tibble(ntits)
+                          -soft_manag_area) -> ntits200
+  rm(cmetrics_pm, cmetrics_cc, manag, tits_clean)
+  ntits200 <- tibble::as_tibble(ntits200)
 
   # Weighting of woodyveg_volume with strata_num:
-  ntits %>% dplyr::mutate(strata_w = dplyr::case_when(
+  ntits200 %>% dplyr::mutate(strata_w = dplyr::case_when(
     strata_div == "0" ~ 0.25,
     strata_div == "1" ~ 0.5,
     strata_div == "2" ~ 0.6,
@@ -168,7 +177,7 @@ tfinal_EDAta <- function(){
     dplyr::mutate(woodyveg_vw = woodyveg_volume*strata_w) %>%
     dplyr::select(-strata_div, -strata_num, -strata_w) %>%
     dplyr::relocate(woodyveg_vw, .after = woodyveg_sd) %>%
-    dplyr::rename(patch_perim = perim) -> ntits
+    dplyr::rename(patch_perim = perim) -> ntits200
 
 
 
@@ -179,7 +188,7 @@ tfinal_EDAta <- function(){
   # Does not yield meaningful results.
 
   ### For variables related to landscape composition______________________________#
-  ntits %>% dplyr::select(id_nestbox, site, built_area, build_volume,
+  ntits200 %>% dplyr::select(id_nestbox, site, built_area, build_volume,
                           build_sd, open_area) -> xxx # In the end, I decided to remove traffic!
 
   # Normed-PCA:
@@ -195,13 +204,13 @@ tfinal_EDAta <- function(){
   # variance (70.2%)*** of my four variables, we can use the coordinates of observations on
   # this axis as a synthetic variable:
   zzz <- res.pca$ind$coord[,1]
-  ntits$urban_intensity <- zzz # This variable opposes nestboxes located in very dense urban
+  ntits200$urban_intensity <- zzz # This variable opposes nestboxes located in very dense urban
   # areas with less densely urbanised (or even not-urbanised) areas.
 
 
 
   ### For variables related to light pollution____________________________________#
-  ntits %>% dplyr::select(id_nestbox, site,
+  ntits200 %>% dplyr::select(id_nestbox, site,
                           lsource_0_m, lsource_10_m, lflux_0_m, lflux_10_m) -> xxx
 
   # Normed-PCA:
@@ -217,7 +226,7 @@ tfinal_EDAta <- function(){
   # (75.7%)*** of my four variables, we can use the coordinates of observations on this axis as
   # a synthetic variable:
   zzz <- res.pca$ind$coord[,1]
-  ntits$light_pollution <- zzz # This variable opposes nestboxes located in areas experiencing
+  ntits200$light_pollution <- zzz # This variable opposes nestboxes located in areas experiencing
   # strong light pollution against more preserved areas.
 
 
@@ -225,8 +234,8 @@ tfinal_EDAta <- function(){
   ##### * 1.3. Datasets formatting -----------------------------------------------
   # ---------------------------------------------------------------------------- #
 
-  ntits[which(ntits$noise_m == min(ntits$noise_m)), "noise_m"] <- 31
-  ntits %>% dplyr::mutate(
+  ntits200[which(ntits200$noise_m == min(ntits200$noise_m)), "noise_m"] <- 31
+  ntits200 %>% dplyr::mutate(
     F_metric_d1b0 = dplyr::case_when(
       species == "PM" ~ pmF_d1_beta0, species == "CC" ~ ccF_d1_beta0),
     F_metric_d2b0 = dplyr::case_when(
@@ -258,8 +267,9 @@ tfinal_EDAta <- function(){
                   woody_area, patch_area, patch_perim, herbaceous_area, manag_intensity,
                   light_pollution, noise_m, noise_iq,
                   traffic, built_area, build_volume, build_sd, open_area, water_area, urban_intensity,
-                  cumdd_30, cumdd_60, cumdd_between, min_t_before, min_t_between) -> ntits_reduced
-  rm(res.pca, xxx, zzz)
+                  cumdd_30, cumdd_60, cumdd_between, min_t_before, min_t_between) -> ntits200_reduced
+
+  rm(res.pca, xxx, zzz, ttt)
 
 
 
@@ -273,8 +283,8 @@ tfinal_EDAta <- function(){
   ##### * 2.1. Univariate outliers -----------------------------------------------
   # ---------------------------------------------------------------------------- #
 
-  uni.boxplots(ntits_reduced[,16:ncol(ntits_reduced)]) # Only for IVs, not Ys.
-  uni.dotplots(ntits_reduced[,16:ncol(ntits_reduced)])
+  uni.boxplots(ntits150_reduced[,16:ncol(ntits150_reduced)]) # Only for IVs, not Ys.
+  uni.dotplots(ntits150_reduced[,16:ncol(ntits150_reduced)])
   # We can see that:
   # - There are extreme values for many variables.
   # - Many variables are quite strongly left-skewed.
@@ -286,12 +296,12 @@ tfinal_EDAta <- function(){
   ##### * 2.2. Normality, skewness and kurtosis ----------------------------------
   # ---------------------------------------------------------------------------- #
 
-  uni.histograms(ntits_reduced[,16:ncol(ntits_reduced)])
+  uni.histograms(ntits150_reduced[,16:ncol(ntits150_reduced)])
 
-  ntits.x <- ntits_reduced[,16:ncol(ntits_reduced)]
-  ntits.xnum <- ntits.x[, sapply(ntits.x, is.numeric)] # To only select numeric variables.
-  tab <- data.frame(moments::skewness(x = ntits.xnum), moments::kurtosis(x = ntits.xnum)-3)
-  ntitsx_skewkurtable <- knitr::kable(x = tab, digits = 3,
+  ntits150.x <- ntits150_reduced[,16:ncol(ntits150_reduced)]
+  ntits150.xnum <- ntits150.x[, sapply(ntits150.x, is.numeric)] # To only select numeric variables.
+  tab <- data.frame(moments::skewness(x = ntits150.xnum), moments::kurtosis(x = ntits150.xnum)-3)
+  ntits150x_skewkurtable <- knitr::kable(x = tab, digits = 3,
                                       col.names = c("Skewness", "Excess kurtosis"))
   # If skewness values are fairly acceptable for most variables (although F_metric_d3b1
   # and water_area > 3), several variables present (sometimes very) excessive kurtosis:
@@ -311,18 +321,20 @@ tfinal_EDAta <- function(){
   ##### * 2.3. Multivariate relationships ----------------------------------------
   # ---------------------------------------------------------------------------- #
 
-  ntits.xnum %>%
-    dplyr::select(-F_metric_d3b0, -F_metric_d3b1, -Rr_metric_d1c1, -woodyveg_volume) -> ntits.xnum
+  ### ** 2.3.1. For the same buffer distance (same dataset) ----
+  # ____________________________________________________________
+  ntits150.xnum %>%
+    dplyr::select(-F_metric_d3b0, -F_metric_d3b1, -Rr_metric_d1c1, -woodyveg_volume) -> ntits150.xnum
   # To compute the correlation matrix:
-  res.cor.ntitsx <- round(stats::cor(ntits.xnum, use = "complete.obs", method = "spearman"), 2)
+  res.cor.ntits150x <- round(stats::cor(ntits150.xnum, use = "complete.obs", method = "spearman"), 2)
   # To compute a matrix of correlation p-values:
-  res.pcor.ntitsx <- ggcorrplot::cor_pmat(x = ntits.xnum, method = "spearman")
+  res.pcor.ntits150x <- ggcorrplot::cor_pmat(x = ntits150.xnum, method = "spearman")
 
-  ntitsx.corplot <- ggcorrplot::ggcorrplot(res.cor.ntitsx, type = "upper",
+  ntits150x.corplot <- ggcorrplot::ggcorrplot(res.cor.ntits150x, type = "upper",
                                            outline.col = "white",
                                            ggtheme = ggplot2::theme_gray,
                                            colors = c("#6D9EC1", "white", "#E46726"),
-                                           p.mat = res.pcor.ntitsx,
+                                           p.mat = res.pcor.ntits150x,
                                            insig = "blank")
   # We can see that:
   # - All connectivity metrics and woodyveg variables are quite strongly positively correlated,
@@ -338,7 +350,7 @@ tfinal_EDAta <- function(){
   #   is not! It also shows that the minimal temperature before laying tends to be higher when there
   #   is not much vegetation (i.e. when the stations are located in densely urbanised areas).
 
-  ntitsx.pairplot <- GGally::ggpairs(ntits.xnum)
+  ntits150x.pairplot <- GGally::ggpairs(ntits150.xnum)
   # We find again the same patterns. Yet, we can see that:
   # - Some relationships are actually not linear but curvilinear.
   # - There may be problematic outliers, particularly for noise_m.
@@ -352,6 +364,69 @@ tfinal_EDAta <- function(){
   # among the proxies showing the least correlation with other variables (which could help
   # preventing multicollinearity).
 
+
+
+  ### ** 2.3.2. Across buffer distances (across the four datasets) ----
+  # ___________________________________________________________________
+  ntits50.xnum %>%
+    dplyr::select(-F_metric_d3b0, -F_metric_d3b1, -Rr_metric_d1c1, -woodyveg_volume) -> ntits50.xnum
+  ntits100.xnum %>%
+    dplyr::select(-F_metric_d3b0, -F_metric_d3b1, -Rr_metric_d1c1, -woodyveg_volume) -> ntits100.xnum
+  ntits150.xnum %>%
+    dplyr::select(-F_metric_d3b0, -F_metric_d3b1, -Rr_metric_d1c1, -woodyveg_volume) -> ntits150.xnum
+  ntits200.xnum %>%
+    dplyr::select(-F_metric_d3b0, -F_metric_d3b1, -Rr_metric_d1c1, -woodyveg_volume) -> ntits200.xnum
+
+  ntits50.xnum %>%
+    dplyr::select(F_metric_d2b1, patch_area, woody_area, herbaceous_area, open_area,
+                  water_area, urban_intensity, min_t_between, light_pollution,
+                  noise_m, traffic) %>%
+    dplyr::rename("flux metric" = F_metric_d2b1,
+                  "local patch area" = patch_area,
+                  "temperature" = min_t_between,
+                  "noise pollution" = noise_m) -> ntits50.xnum_2
+  ntits100.xnum %>%
+    dplyr::select(F_metric_d2b1, patch_area, woody_area, herbaceous_area, open_area,
+                  water_area, urban_intensity, min_t_between, light_pollution,
+                  noise_m, traffic) %>%
+    dplyr::rename("flux metric" = F_metric_d2b1,
+                  "local patch area" = patch_area,
+                  "temperature" = min_t_between,
+                  "noise pollution" = noise_m) -> ntits100.xnum_2
+  ntits150.xnum %>%
+    dplyr::select(F_metric_d2b1, patch_area, woody_area, herbaceous_area, open_area,
+                  water_area, urban_intensity, min_t_between, light_pollution,
+                  noise_m, traffic) %>%
+    dplyr::rename("flux metric" = F_metric_d2b1,
+                  "local patch area" = patch_area,
+                  "temperature" = min_t_between,
+                  "noise pollution" = noise_m) -> ntits150.xnum_2
+  ntits200.xnum %>%
+    dplyr::select(F_metric_d2b1, patch_area, woody_area, herbaceous_area, open_area,
+                  water_area, urban_intensity, min_t_between, light_pollution,
+                  noise_m, traffic) %>%
+    dplyr::rename("flux metric" = F_metric_d2b1,
+                  "local patch area" = patch_area,
+                  "temperature" = min_t_between,
+                  "noise pollution" = noise_m) -> ntits200.xnum_2
+  colnames(ntits50.xnum_2) <- paste(colnames(ntits50.xnum_2), "50m", sep = "_")
+  colnames(ntits100.xnum_2) <- paste(colnames(ntits100.xnum_2), "100m", sep = "_")
+  colnames(ntits150.xnum_2) <- paste(colnames(ntits150.xnum_2), "150m", sep = "_")
+  colnames(ntits200.xnum_2) <- paste(colnames(ntits200.xnum_2), "200m", sep = "_")
+    ntits_all <- cbind(ntits50.xnum_2, ntits100.xnum_2, ntits150.xnum_2, ntits200.xnum_2)
+
+
+  # To compute the correlation matrix:
+  res.cor.ntitsallx <- round(stats::cor(ntits_all, use = "complete.obs", method = "spearman"), 2)
+  # To compute a matrix of correlation p-values:
+  res.pcor.ntitsallx <- ggcorrplot::cor_pmat(x = ntits_all, method = "spearman")
+
+  ntits150x.corplot <- ggcorrplot::ggcorrplot(res.cor.ntitsallx, type = "upper",
+                                              outline.col = "white",
+                                              ggtheme = ggplot2::theme_gray,
+                                              colors = c("#6D9EC1", "white", "#E46726"),
+                                              p.mat = res.pcor.ntitsallx,
+                                              insig = "blank")
 
 
 
@@ -370,19 +445,19 @@ tfinal_EDAta <- function(){
   ##### * 3.1. Outliers and distributions ----------------------------------------
   # ---------------------------------------------------------------------------- #
 
-  ntits.y <- ntits_reduced[,10:15]
+  ntits150.y <- ntits150_reduced[,10:15]
 
   ### For NTITS___________________________________________________________________#
 
-  uni.boxplots(ntits.y)
-  uni.dotplots(ntits.y)
+  uni.boxplots(ntits150.y)
+  uni.dotplots(ntits150.y)
   # we can say that the 6 DV (dependant variables) have relatively nice distributions although
   # we seem to have a zero-inflation for "brood_size" and "fledgling_nb", as well as a slight
   # left-skewness for the morphometric variables (possibly linked to the differences among tit
   #  species).
-  tab <- data.frame(moments::skewness(x = stats::na.omit(ntits.y)),
-                    moments::kurtosis(x = stats::na.omit(ntits.y))-3)
-  ntitsy_skewkurtable <- knitr::kable(x = tab, digits = 3, col.names = c("Skewness",
+  tab <- data.frame(moments::skewness(x = stats::na.omit(ntits150.y)),
+                    moments::kurtosis(x = stats::na.omit(ntits150.y))-3)
+  ntits150y_skewkurtable <- knitr::kable(x = tab, digits = 3, col.names = c("Skewness",
                                                                          "Excess kurtosis"))
   # But skewness and kurtosis values are very satisfactory.
 
@@ -392,15 +467,15 @@ tfinal_EDAta <- function(){
   # ---------------------------------------------------------------------------- #
 
   # To compute the correlation matrix:
-  res.cor.ntitsy <- round(stats::cor(ntits.y, use = "complete.obs", method = "spearman"), 2)
+  res.cor.ntits150y <- round(stats::cor(ntits150.y, use = "complete.obs", method = "spearman"), 2)
   # To compute a matrix of correlation p-values:
-  res.pcor.ntitsy <- ggcorrplot::cor_pmat(x = ntits.y, method = "spearman")
+  res.pcor.ntits150y <- ggcorrplot::cor_pmat(x = ntits150.y, method = "spearman")
 
-  ntitsy.corplot <- ggcorrplot::ggcorrplot(res.cor.ntitsy, type = "upper",
+  ntits150y.corplot <- ggcorrplot::ggcorrplot(res.cor.ntits150y, type = "upper",
                                            outline.col = "white",
                                            ggtheme = ggplot2::theme_gray,
                                            colors = c("#6D9EC1", "white", "#E46726"),
-                                           p.mat = res.pcor.ntitsy,
+                                           p.mat = res.pcor.ntits150y,
                                            insig = "blank")
   # We can see that:
   # - The 3 reproductive variables are strongly positively correlated and so are the three
@@ -409,7 +484,7 @@ tfinal_EDAta <- function(){
   #   variables suggesting that when large clutches or broods lead to smaller chicks!
   # - Interestingly, the number of fledglings seem uncorrelated with nestlings morphology.
 
-  ntitsy.pairplot <- GGally::ggpairs(ntits.y)
+  ntits150y.pairplot <- GGally::ggpairs(ntits150.y)
   # We can see that:
   # - The positive relationship among the morphometric variables is undeniable.
   # - The zero-inflation may be due to another process as the total failures in "brood_size"
@@ -434,9 +509,9 @@ tfinal_EDAta <- function(){
   ##### 4. Final data formatting #####
   # -------------------------------- #
 
-  rm(tab, ntits.x, ntits.y, ntits.xnum, res.cor.ntitsx, res.pcor.ntitsx)
+  rm(tab, ntits150.x, ntits150.y, ntits150.xnum, res.cor.ntits150x, res.pcor.ntits150x)
 
-  ntits_reduced %>% dplyr::mutate(Dr_metric_c1 = Dr_metric_c1/1000, # Changing scale of the
+  ntits150_reduced %>% dplyr::mutate(Dr_metric_c1 = Dr_metric_c1/1000, # Changing scale of the
                                   # cost-distance.
                                   Dr_metric_c2 = Dr_metric_c2/1000, # Changing scale of the
                                   # cost-distance.
@@ -476,10 +551,10 @@ tfinal_EDAta <- function(){
     dplyr::mutate(dplyr::across(where(is.matrix), as.numeric),
                   dplyr::across(where(is.character), as.factor)) %>%
     dplyr::mutate(coord_y = jitter(x = coord_y, factor = 1.2)) %>%
-    dplyr::mutate(coord_x = jitter(x = coord_x, factor = 1.2)) -> ntits2
+    dplyr::mutate(coord_x = jitter(x = coord_x, factor = 1.2)) -> ntits1502
 
   # To enable exploring some interaction models, I further median-centre some of the variables:
-  ntits2 %>% dplyr::mutate(c.log_patch_area = log_patch_area-stats::median(log_patch_area),
+  ntits1502 %>% dplyr::mutate(c.log_patch_area = log_patch_area-stats::median(log_patch_area),
                            c.log_woody_vol = log_woody_vol-stats::median(log_woody_vol),
                            c.log_woody_area = log_woody_area-stats::median(log_woody_area),
                            c.log_F_metric_d2b1 = log_F_metric_d2b1-stats::median(log_F_metric_d2b1),
@@ -494,8 +569,8 @@ tfinal_EDAta <- function(){
                            c.traffic = traffic-stats::median(traffic),
                            c.cumdd_30 = cumdd_30-stats::median(cumdd_30),
                            c.cumdd_between = cumdd_between-stats::median(cumdd_between),
-                           c.min_t_between = min_t_between-stats::median(min_t_between)) -> ntits2
-  ntits2[ntits2$id_nestbox == "DIJ-205" & ntits2$year == "2019", "species"] <- "PM" # Misidentified
+                           c.min_t_between = min_t_between-stats::median(min_t_between)) -> ntits150_2
+  ntits150_2[ntits150_2$id_nestbox == "DIJ-205" & ntits150_2$year == "2019", "species"] <- "PM" # Misidentified
   # observation.
 
 
@@ -504,17 +579,17 @@ tfinal_EDAta <- function(){
   ##### To export the results
   # _________________________
 
-  readr::write_csv2(x = ntits2, file = here::here("output", "tables", "ndata_final.csv"))
+  readr::write_csv2(x = ntits150_2, file = here::here("output", "tables", "ndata_final.csv"))
 
-  output <- list(final_dataset = ntits2,
+  output <- list(final_dataset = ntits150_2,
                  urban_corplot = landscape.varplot,
                  lightpol_corplot = lightpol.varplot,
-                 x_cormat = ntitsx.corplot,
-                 y_cormat = ntitsy.corplot,
-                 x_pairplot = ntitsx.pairplot,
-                 y_pairplot = ntitsy.pairplot,
-                 x_skewtable = ntitsx_skewkurtable,
-                 y_skewtable = ntitsy_skewkurtable,
+                 x_cormat = ntits150x.corplot,
+                 y_cormat = ntits150y.corplot,
+                 x_pairplot = ntits150x.pairplot,
+                 y_pairplot = ntits150y.pairplot,
+                 x_skewtable = ntits150x_skewkurtable,
+                 y_skewtable = ntits150y_skewkurtable,
                  path = here::here("output", "tables", "ndata_final.csv"))
   return(output)
 }

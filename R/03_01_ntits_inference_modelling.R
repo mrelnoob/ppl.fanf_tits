@@ -445,6 +445,27 @@ ntits3 <- ntits[-c(which(ntits$brood_size == 0)),]
 # random effect (OLRE) with the use of a beta-binomial model, so that's what we did (see below):
 ntits3$id_obs <- as.factor(1:nrow(ntits3)) # To create an observation-level RE (OLRE).
 
+
+### Correcting fledgling numbers (by substracting dead individuals):
+ntits3[ntits3$id_nestbox == "DIJ-177" &
+         ntits3$year == "2021", "fledgling_nb"] <- 7
+ntits3[ntits3$id_nestbox == "DIJ-087" &
+         ntits3$year == "2021", "fledgling_nb"] <- 7
+ntits3[ntits3$id_nestbox == "DIJ-008" &
+         ntits3$year == "2022", "fledgling_nb"] <- 7
+ntits3[ntits3$id_nestbox == "DIJ-059" &
+         ntits3$year == "2022", "fledgling_nb"] <- 7
+ntits3[ntits3$id_nestbox == "DIJ-217" &
+         ntits3$year == "2022", "fledgling_nb"] <- 5
+ntits3[ntits3$id_nestbox == "DIJ-223B" &
+         ntits3$year == "2022", "fledgling_nb"] <- 6
+ntits3[ntits3$id_nestbox == "DIJ-225B" &
+         ntits3$year == "2022", "fledgling_nb"] <- 7
+ntits3[ntits3$id_nestbox == "DIJ-259" &
+         ntits3$year == "2022", "fledgling_nb"] <- 4
+
+
+
 # Note also that in these models, we included "clutch_size" as a predictor because it is likely an
 # important predictor of nestling survival. However, as could have been expected, it lead to
 # pretty strong collinearity issues with "species" as it is one of the strongest predictors of
@@ -569,9 +590,11 @@ ttFS_zibbin_glmm1 <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_patch_area +
 # summary(ttFS_zibin_glmm1) # AIC = 1415.1 (compared to 2105.8 without ZI).
 # summary(ttFS_zibin_glmm1_olre) # AIC = 1382.3 (compared to 1476 without ZI), so the OLRE still
 # # improves the fit compared to the GLM.
-summary(ttFS_zibbin_glm1) # AIC = 1377.5 (compared to 1475.5 without ZI), so the ZIBBIN GLM does
+summary(ttFS_zibbin_glm1) # AIC = 1393.4 (with updated "fledgling_nb") vs 1377.5 (compared to
+# 1475.5 without ZI), so the ZIBBIN GLM does
 # slightly better than the BIN GLMM with OLRE.
-summary(ttFS_zibbin_glmm1) # AIC = 1379.5 (compared to 1476.3 without ZI), so the ZIBBIN GLMM does
+summary(ttFS_zibbin_glmm1) # AIC = 1395.4 (with updated "fledgling_nb") vs 1379.5 (compared to
+# 1476.3 without ZI), so the ZIBBIN GLMM does
 # not better than the ZIBBIN GLM (AIC are quite close), but it still performs better than any
 # ZIBIN model.
 
@@ -625,9 +648,11 @@ ttFS_zibbin_glmm2 <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~
 # # the fit (and is significant)!
 # summary(ttFS_zibin_glmm2_olre) # 1379.7 (compared to 1382.3 without ZI), so the interaction
 # # improves the fit (and is significant) but to a lesser extent than without the OLRE!
-summary(ttFS_zibbin_glm2) # 1374.5 (compared to 1377.5 without ZI), so the interaction improves
+summary(ttFS_zibbin_glm2) # 1390.7 (with updated "fledgling_nb") vs 1374.5 (compared to 1377.5
+# without ZI), so the interaction improves
 # the fit (and is significant) and this model beats the ZIBIN ones!
-summary(ttFS_zibbin_glmm2) # 1376.5 (compared to 1379.5 without ZI), so it doesn't change much
+summary(ttFS_zibbin_glmm2) # 1392.7 (with updated "fledgling_nb") vs 1376.5 (compared to 1379.5
+# without ZI), so it doesn't change much
 # compared to the ZIBBIN GLM, yet it is still better than any ZIBIN model.
 
 ## It seems that, the inclusion of a random effect (RE) strongly improved the fit when the ZI and
@@ -684,8 +709,8 @@ DHARMa::outliers(simu.resid2) # Ok.
 DHARMa::testSpatialAutocorrelation(simulationOutput = simu.resid,
                                    x = ntits3$coord_x, y = ntits3$coord_y, plot = TRUE) # Spatial
 # autocorrelation detected only for the OLRE models!
-performance::check_autocorrelation(ttFS_zibbin_glmm1) # Ok.
-performance::check_collinearity(ttFS_zibbin_glmm1) # Ok for the beta-binomial models (highest VIF
+performance::check_autocorrelation(ttFS_zibbin_glmm1) # Ok-ish.
+performance::check_collinearity(ttFS_zibbin_glmm2) # Ok for the beta-binomial models (highest VIF
 # value for the first ZIBBIN = 3.44 for the F-metric while it was 4.03 for the second model).
 # For the OLRE models however, alarming multicollinearity issues have been detected with a
 # moderate correlation linked to "clutch_size" being present, several VIF values > 4 and even 8.5
@@ -711,12 +736,12 @@ DHARMa::plotResiduals(simu.resid, form = ntits3$light_pollution)
 DHARMa::plotResiduals(simu.resid, form = ntits3$noise_m)
 DHARMa::plotResiduals(simu.resid, form = ntits3$traffic)
 DHARMa::plotResiduals(simu.resid, form = ntits3$cumdd_30)
-DHARMa::plotResiduals(simu.resid, form = ntits3$cumdd_between)
+DHARMa::plotResiduals(simu.resid, form = ntits3$cumdd_between) # Slight deviation detected.
 DHARMa::plotResiduals(simu.resid, form = ntits3$min_t_between)
 DHARMa::plotResiduals(simu.resid, form = ntits3$laying_day)
 DHARMa::plotResiduals(simu.resid, form = ntits3$year)
-# For the ZIBBIN models, no deviations were detected. For the models with OLRE, worrying deviations
-# have been found for "urban_intensity" (likely linked to the "built volume").
+# For the ZIBBIN models, no major deviations were detected. For the models with OLRE, worrying
+# deviations have been found for "urban_intensity" (likely linked to the "built volume").
 
 
 
@@ -791,10 +816,10 @@ ggplot2::ggplot(mydata, ggplot2::aes(y = logit, x = predictor.value))+
 
 ## Computing a pseudo-R2:
 performance::r2_nakagawa(ttFS_zibbin_glmm1, tolerance = 0.0000000000001)
-# [Additive model]: Marg_R2_glmm = 0.19; Cond_R2_glmm = 0.19 (but may be unreliable due to
+# [Additive model]: Marg_R2_glmm = 0.17; Cond_R2_glmm = 0.17 (but may be unreliable due to
 # difficulties to compute RE variances)!
 performance::r2_nakagawa(ttFS_zibbin_glmm2, tolerance = 0.0000000000001)
-# [Interactive model]: Marg_R2_glmm = 0.19; Cond_R2_glmm = 0.19 (but may be unreliable due to
+# [Interactive model]: Marg_R2_glmm = 0.17; Cond_R2_glmm = 0.17 (but may be unreliable due to
 # difficulties to compute RE variances)!
 
 ## Likelihood-based evaluation of effects inclusion:
@@ -815,10 +840,10 @@ zzz2 <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ log_patch_area + log_F_metric
                                       weights = brood_size, data = ntits3,
                                       family = glmmTMB::betabinomial(link = "logit"),
                                       ziformula = ~1) # Intercept only.
-summary(zzz) # 1379.1.
-summary(zzz2) # 1381.1.
-# Beta-binomial models: The non-mixed model gives AIC = 1377.5 while mixed-models yield an AIC
-# of 1379.5 (with "id_nestbox"), 1379.1. (with "site"), or 1381.1. (with both). It thus appears
+summary(zzz) # 1395.3
+summary(zzz2) # 1397.3
+# Beta-binomial models: The non-mixed model gives AIC = 1395.3 while mixed-models yield an AIC
+# of 1395.4 (with "id_nestbox"), 1396 (with "site"), or 1397.3 (with both). It thus appears
 # that the the use of RE is not useful here! We'll still use the GLMM_1 for further analyses, just
 # in case (and because some consider that you should always include RE when you can, although this
 # is rather a question of statistical philosophy, I reckon).
@@ -828,7 +853,7 @@ ttFS_zibbin_glmm0 <- glmmTMB::glmmTMB(fledgling_nb/brood_size ~ 1 + (1|id_nestbo
                                       weights = brood_size, data = ntits3,
                                       family = glmmTMB::betabinomial(link = "logit"),
                                       ziformula = ~1)
-summary(ttFS_zibbin_glmm0) # AIC = 1462.9 vs 1379.5, so the full model is clearly far better!
+summary(ttFS_zibbin_glmm0) # AIC = 1470.4 vs 1395.4, so the full model is clearly far better!
 
 
 
@@ -840,9 +865,9 @@ summary(ttFS_zibbin_glmm0) # AIC = 1462.9 vs 1379.5, so the full model is clearl
 ### *** 2.1.3.1. Hypotheses testing: LRT for the additive and interactive effect of the F-metric ----
 ## For the additive effect of the connectivity metric:
 ttFS_zibbin_glmm0 <- stats::update(ttFS_zibbin_glmm1, .~. -log_F_metric_d2b1)
-summary(ttFS_zibbin_glmm0) # AIC = 1383.3 vs 1379.5 (hypothesis 1 likely validated)!
+summary(ttFS_zibbin_glmm0) # AIC = 1399.2 vs 1395.4 (hypothesis 1 likely validated)!
 ttFS_zibbin_glm0 <- stats::update(ttFS_zibbin_glm1, .~. -log_F_metric_d2b1)
-summary(ttFS_zibbin_glm0) # AIC = 1381.3 vs 1377.5 (hypothesis 1 likely validated)!
+summary(ttFS_zibbin_glm0) # AIC = 1397.2 vs 1393.2 (hypothesis 1 likely validated)!
 
 ## Regular LRT (temporary results):
 res.LRT_hypo1 <- stats::anova(object = ttFS_zibbin_glmm0, ttFS_zibbin_glmm1, test = "LRT")
@@ -941,7 +966,8 @@ x_tilde <- expand.grid(c.log_patch_area = seq(-2.26,1.184, length.out=15),
                        # interaction).
                        clutch_size = 9,
                        urban_intensity = 0,
-                       manag_intensity = "0",
+                       manag_mid = "1",
+                       manag_high = "0",
                        light_pollution = 0,
                        noise_m = 5.3,
                        traffic = 2.1,
@@ -973,8 +999,8 @@ lattice::wireframe(fledging_rate ~ c.log_patch_area + c.log_F_metric_d2b1, data=
 
 ### *** 2.1.3.3. Conclusion ----
 # For the initial model:
-summary(ttFS_zibbin_glmm1) # AIC = 1379.5 and both R2_glmm = 0.19!
-summary(ttFS_zibbin_glmm2) # AIC = 1376.5 and both R2_glmm = 0.19!
+summary(ttFS_zibbin_glmm1) # AIC = 1395.4 and both R2_glmm = 0.17!
+summary(ttFS_zibbin_glmm2) # AIC = 1392.7 and both R2_glmm = 0.17!
 # Diagnostics ran for these models indicated that the model fit the data relatively well although
 # prediction ranges are too narrow and the models fail to predict total failures and successes!
 # It is possible that the ZI forces the models to predict medium values.u
